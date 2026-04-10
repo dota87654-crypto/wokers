@@ -47,6 +47,20 @@
     </form>
   </div>
 
+  <div class="comments-section">
+    <h2>댓글</h2>
+    <div id="disqus_thread"></div>
+    <script>
+      (function() {
+        var d = document, s = d.createElement('script');
+        s.src = 'https://workers-1.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+      })();
+    </script>
+    <noscript>댓글을 보려면 JavaScript를 활성화하세요. <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+
   <script defer type="text/javascript" src="/main.js"></script>
 </body>
 </html>
