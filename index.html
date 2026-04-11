@@ -71,6 +71,7 @@
             <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
             <span class="cal-title" id="cal-title"></span>
             <button class="cal-nav-btn" id="cal-next">&#8250;</button>
+            <button class="cal-add-btn" id="open-plan-add">+ 계획 등록</button>
           </div>
           <div class="cal-weekdays">
             <span class="sun">일</span><span>월</span><span>화</span>
@@ -79,42 +80,48 @@
           <div class="cal-grid" id="cal-grid"></div>
         </div>
 
-        <!-- 할 일 -->
-        <div class="dash-todo">
-
-          <!-- 미완료 계획 패널 (입력 포커스 시 표시) -->
-          <div class="incomplete-panel" id="incomplete-panel">
-            <div class="incomplete-panel-title">⚠ 미완료 계획</div>
-            <div class="incomplete-list" id="incomplete-list"></div>
-          </div>
-
-          <!-- 계획 등록 -->
-          <div class="todo-add-section">
-            <div class="todo-section-title">계획 등록</div>
-            <div class="todo-form-row">
-              <input type="text" id="todo-headline" class="todo-input" placeholder="제목 (헤드라인)" autocomplete="off" />
-              <input type="date" id="todo-date-input" class="todo-date-input" />
-              <button class="todo-add-btn" id="todo-add-btn">추가</button>
+        <!-- 계획 목록 사이드바 -->
+        <div class="plan-sidebar">
+          <div class="plan-sidebar-header">
+            <span class="todo-section-title">계획 목록</span>
+            <div class="todo-filter">
+              <button class="filter-btn active" data-filter="all">전체</button>
+              <button class="filter-btn" data-filter="incomplete">미완료</button>
+              <button class="filter-btn" data-filter="complete">완료</button>
             </div>
-            <textarea id="todo-text" class="todo-content-input" placeholder="내용 (선택사항)" rows="2"></textarea>
           </div>
-
-          <!-- 계획 목록 -->
-          <div class="todo-list-wrap">
-            <div class="todo-list-header">
-              <div class="todo-section-title">계획 목록</div>
-              <div class="todo-filter">
-                <button class="filter-btn active" data-filter="all">전체</button>
-                <button class="filter-btn" data-filter="incomplete">미완료</button>
-                <button class="filter-btn" data-filter="complete">완료</button>
-              </div>
-            </div>
-            <div id="todo-list"></div>
-          </div>
-
+          <div id="todo-list"></div>
         </div>
       </div>
     </section>
+
+    <!-- ===== 계획 등록 모달 ===== -->
+    <div class="modal-overlay" id="plan-add-modal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <button class="modal-close" id="plan-add-close">✕</button>
+        <h2 class="modal-title">계획 등록</h2>
+
+        <!-- 미완료 계획 패널 -->
+        <div class="incomplete-panel" id="incomplete-panel" style="display:none;">
+          <div class="incomplete-panel-title">⚠ 미완료 계획</div>
+          <div class="incomplete-list" id="incomplete-list"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label for="todo-headline">제목</label>
+          <input type="text" id="todo-headline" class="todo-input" placeholder="계획 제목을 입력하세요" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="todo-text">내용 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
+          <textarea id="todo-text" class="todo-content-input" placeholder="상세 내용을 입력하세요" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="todo-date-input">날짜</label>
+          <input type="date" id="todo-date-input" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:0.92rem;font-family:inherit;background:#fafafa;" />
+        </div>
+        <button class="todo-add-btn" id="todo-add-btn" style="width:100%;padding:12px;">추가하기</button>
+      </div>
+    </div>
 
     <!-- ===== 날짜별 계획 팝업 ===== -->
     <div class="modal-overlay" id="plan-modal" aria-hidden="true">

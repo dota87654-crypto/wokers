@@ -196,8 +196,13 @@ function renderCalendar() {
       const date = cell.dataset.date;
       document.getElementById('todo-date-input').value = date;
       renderCalendar();
-      // 계획이 있으면 팝업 표시
-      if (byDate[date]?.length) openPlanModal(date, byDate[date]);
+      if (byDate[date]?.length) {
+        // 계획 있는 날짜 → 계획 상세 팝업
+        openPlanModal(date, byDate[date]);
+      } else {
+        // 빈 날짜 → 계획 등록 모달
+        openPlanAddModal();
+      }
     });
   });
 }
@@ -423,10 +428,37 @@ async function editTodo(id, headline, text, date) {
   await db.from('todos').update({ headline, text, date: date || null }).eq('id', id);
 }
 
+// ===================================================
+//  계획 등록 모달
+// ===================================================
+const planAddModal  = document.getElementById('plan-add-modal');
+const planAddClose  = document.getElementById('plan-add-close');
+const openPlanAddBtn = document.getElementById('open-plan-add');
+
+function openPlanAddModal() {
+  renderIncompletePanel();
+  planAddModal.classList.add('active');
+  planAddModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('todo-headline')?.focus(), 100);
+}
+
+function closePlanAddModal() {
+  planAddModal.classList.remove('active');
+  planAddModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+openPlanAddBtn.addEventListener('click', openPlanAddModal);
+planAddClose.addEventListener('click', closePlanAddModal);
+planAddModal.addEventListener('click', e => { if (e.target === planAddModal) closePlanAddModal(); });
+
 // ---- 이벤트 ----
-document.getElementById('todo-add-btn').addEventListener('click', handleAddTodo);
+document.getElementById('todo-add-btn').addEventListener('click', async () => {
+  await handleAddTodo();
+  closePlanAddModal();
+});
 document.getElementById('todo-headline').addEventListener('keydown', e => { if (e.key === 'Enter') handleAddTodo(); });
-document.getElementById('todo-headline').addEventListener('focus', renderIncompletePanel);
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -470,7 +502,8 @@ successClose.addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (planModal.classList.contains('active')) closePlanModal();
+    if (planAddModal.classList.contains('active')) closePlanAddModal();
+    else if (planModal.classList.contains('active')) closePlanModal();
     else if (modal.classList.contains('active')) closeModal();
   }
 });
