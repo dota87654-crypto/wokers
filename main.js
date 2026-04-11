@@ -230,6 +230,8 @@ async function fetchAndRenderWeather(lat, lon, cityName) {
             <div class="weather-city-row">
               <span class="weather-city">📍 ${city}</span>
               <button class="weather-search-toggle" id="weather-search-toggle" title="다른 지역 검색">🔍</button>
+              <button class="weather-fav-save" id="weather-fav-save" title="즐겨찾기에 추가">☆</button>
+              <button class="weather-fav-toggle" id="weather-fav-toggle" title="즐겨찾기 목록">즐겨찾기</button>
             </div>
             <div class="weather-temp">${Math.round(cw.temperature)}°C</div>
             <div class="weather-desc">${wmo.text}</div>
@@ -241,7 +243,8 @@ async function fetchAndRenderWeather(lat, lon, cityName) {
       <div class="weather-search-row" id="weather-search-row" style="display:none;">
         <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름 입력 (예: 부산, Tokyo, New York)" autocomplete="off" />
         <button class="weather-search-btn" id="weather-search-btn">검색</button>
-      </div>`;
+      </div>
+      <div class="weather-fav-row" id="weather-fav-row" style="display:none;"></div>`;
 
     attachWeatherSearchEvents();
   } catch {
@@ -278,17 +281,102 @@ async function searchCityWeather() {
   }
 }
 
+// ---- 즐겨찾기 ----
+const WEATHER_FAV_KEY = 'weather_favorites_v1';
+
+function getFavorites() {
+  return JSON.parse(localStorage.getItem(WEATHER_FAV_KEY) || '[]');
+}
+
+function isFavorite(name) {
+  return getFavorites().some(f => f.name === name);
+}
+
+function toggleFavorite() {
+  if (!_weatherCity || _weatherLat === null) return;
+  const favs = getFavorites();
+  if (isFavorite(_weatherCity)) {
+    localStorage.setItem(WEATHER_FAV_KEY, JSON.stringify(favs.filter(f => f.name !== _weatherCity)));
+  } else {
+    favs.push({ name: _weatherCity, lat: _weatherLat, lon: _weatherLon });
+    localStorage.setItem(WEATHER_FAV_KEY, JSON.stringify(favs));
+  }
+  updateFavSaveBtn();
+  // 즐겨찾기 패널이 열려있으면 갱신
+  const favRow = document.getElementById('weather-fav-row');
+  if (favRow && favRow.style.display !== 'none') renderFavRow();
+}
+
+function updateFavSaveBtn() {
+  const btn = document.getElementById('weather-fav-save');
+  if (!btn) return;
+  const saved = isFavorite(_weatherCity);
+  btn.textContent = saved ? '★' : '☆';
+  btn.title = saved ? '즐겨찾기에서 제거' : '즐겨찾기에 추가';
+  btn.classList.toggle('saved', saved);
+}
+
+function renderFavRow() {
+  const row = document.getElementById('weather-fav-row');
+  if (!row) return;
+  const favs = getFavorites();
+  if (!favs.length) {
+    row.innerHTML = '<span class="weather-fav-empty">☆ 버튼으로 즐겨찾는 지역을 추가하세요.</span>';
+    return;
+  }
+  row.innerHTML = favs.map((f, i) => `
+    <button class="weather-fav-item" data-lat="${f.lat}" data-lon="${f.lon}" data-name="${f.name.replace(/"/g,'&quot;')}">
+      ${f.name}
+      <span class="weather-fav-del" data-idx="${i}">×</span>
+    </button>`).join('');
+
+  row.querySelectorAll('.weather-fav-item').forEach(btn => {
+    btn.addEventListener('click', e => {
+      if (e.target.classList.contains('weather-fav-del')) {
+        e.stopPropagation();
+        const favs2 = getFavorites();
+        favs2.splice(parseInt(e.target.dataset.idx), 1);
+        localStorage.setItem(WEATHER_FAV_KEY, JSON.stringify(favs2));
+        updateFavSaveBtn();
+        renderFavRow();
+        return;
+      }
+      fetchAndRenderWeather(parseFloat(btn.dataset.lat), parseFloat(btn.dataset.lon), btn.dataset.name);
+    });
+  });
+}
+
 function attachWeatherSearchEvents() {
-  const toggleBtn = document.getElementById('weather-search-toggle');
-  const searchRow = document.getElementById('weather-search-row');
-  const searchBtn = document.getElementById('weather-search-btn');
-  const input     = document.getElementById('weather-city-input');
+  const toggleBtn    = document.getElementById('weather-search-toggle');
+  const searchRow    = document.getElementById('weather-search-row');
+  const searchBtn    = document.getElementById('weather-search-btn');
+  const input        = document.getElementById('weather-city-input');
+  const favSaveBtn   = document.getElementById('weather-fav-save');
+  const favToggleBtn = document.getElementById('weather-fav-toggle');
+  const favRow       = document.getElementById('weather-fav-row');
+
+  updateFavSaveBtn();
 
   toggleBtn?.addEventListener('click', () => {
     const hidden = searchRow.style.display === 'none';
     searchRow.style.display = hidden ? 'flex' : 'none';
-    if (hidden) setTimeout(() => input?.focus(), 50);
+    if (hidden) {
+      favRow.style.display = 'none';
+      setTimeout(() => input?.focus(), 50);
+    }
   });
+
+  favSaveBtn?.addEventListener('click', toggleFavorite);
+
+  favToggleBtn?.addEventListener('click', () => {
+    const hidden = favRow.style.display === 'none';
+    favRow.style.display = hidden ? 'flex' : 'none';
+    if (hidden) {
+      searchRow.style.display = 'none';
+      renderFavRow();
+    }
+  });
+
   searchBtn?.addEventListener('click', searchCityWeather);
   input?.addEventListener('keydown', e => { if (e.key === 'Enter') searchCityWeather(); });
 }
