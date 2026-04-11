@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>제휴 문의</title>
+  <title>Daily Planner & 제휴 문의</title>
   <link href='/style.css' rel='stylesheet'>
   <!-- Microsoft Clarity -->
   <script type="text/javascript">
@@ -23,59 +23,123 @@
   </script>
 </head>
 <body>
-  <div class="container">
-    <h1>제휴 문의</h1>
-    <p class="subtitle">아래 양식을 작성해 주시면 빠르게 연락드리겠습니다.</p>
+  <div class="page-wrapper">
 
-    <form action="https://formspree.io/f/xjgpqyyw" method="POST" class="contact-form">
-      <div class="form-group">
-        <label for="name">이름 / 회사명</label>
-        <input type="text" id="name" name="name" placeholder="홍길동 / (주)회사명" required />
+    <!-- ===== DAILY PLANNER DASHBOARD ===== -->
+    <section class="dashboard">
+      <div class="dash-header">
+        <h1 class="dash-title">Daily Planner</h1>
+        <span class="dash-date-text" id="dash-date"></span>
       </div>
 
-      <div class="form-group">
-        <label for="email">이메일</label>
-        <input type="email" id="email" name="email" placeholder="example@email.com" required />
+      <!-- 날씨 -->
+      <div class="dash-weather" id="dash-weather">
+        <span class="weather-loading">📍 위치 정보를 가져오는 중...</span>
       </div>
 
-      <div class="form-group">
-        <label for="phone">연락처</label>
-        <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" />
+      <div class="dash-body">
+        <!-- 달력 -->
+        <div class="dash-calendar">
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="cal-prev">&#8249;</button>
+            <span class="cal-title" id="cal-title"></span>
+            <button class="cal-nav-btn" id="cal-next">&#8250;</button>
+          </div>
+          <div class="cal-weekdays">
+            <span class="sun">일</span><span>월</span><span>화</span>
+            <span>수</span><span>목</span><span>금</span><span class="sat">토</span>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+
+        <!-- 할 일 -->
+        <div class="dash-todo">
+
+          <!-- 미완료 계획 패널 (입력 포커스 시 표시) -->
+          <div class="incomplete-panel" id="incomplete-panel">
+            <div class="incomplete-panel-title">⚠ 미완료 계획</div>
+            <div class="incomplete-list" id="incomplete-list"></div>
+          </div>
+
+          <!-- 계획 등록 -->
+          <div class="todo-add-section">
+            <div class="todo-section-title">계획 등록</div>
+            <div class="todo-form-row">
+              <input type="text" id="todo-text" class="todo-input" placeholder="계획을 입력하세요..." autocomplete="off" />
+              <input type="date" id="todo-date-input" class="todo-date-input" />
+              <button class="todo-add-btn" id="todo-add-btn">추가</button>
+            </div>
+          </div>
+
+          <!-- 계획 목록 -->
+          <div class="todo-list-wrap">
+            <div class="todo-list-header">
+              <div class="todo-section-title">계획 목록</div>
+              <div class="todo-filter">
+                <button class="filter-btn active" data-filter="all">전체</button>
+                <button class="filter-btn" data-filter="incomplete">미완료</button>
+                <button class="filter-btn" data-filter="complete">완료</button>
+              </div>
+            </div>
+            <div id="todo-list"></div>
+          </div>
+
+        </div>
       </div>
+    </section>
 
-      <div class="form-group">
-        <label for="type">문의 유형</label>
-        <select id="type" name="type" required>
-          <option value="" disabled selected>선택해 주세요</option>
-          <option value="광고/마케팅">광고 / 마케팅</option>
-          <option value="콘텐츠 제휴">콘텐츠 제휴</option>
-          <option value="기술 협력">기술 협력</option>
-          <option value="기타">기타</option>
-        </select>
-      </div>
+    <!-- ===== 제휴 문의 폼 ===== -->
+    <div class="container">
+      <h1>제휴 문의</h1>
+      <p class="subtitle">아래 양식을 작성해 주시면 빠르게 연락드리겠습니다.</p>
 
-      <div class="form-group">
-        <label for="message">문의 내용</label>
-        <textarea id="message" name="message" rows="5" placeholder="문의 내용을 입력해 주세요." required></textarea>
-      </div>
+      <form action="https://formspree.io/f/xjgpqyyw" method="POST" class="contact-form">
+        <div class="form-group">
+          <label for="name">이름 / 회사명</label>
+          <input type="text" id="name" name="name" placeholder="홍길동 / (주)회사명" required />
+        </div>
+        <div class="form-group">
+          <label for="email">이메일</label>
+          <input type="email" id="email" name="email" placeholder="example@email.com" required />
+        </div>
+        <div class="form-group">
+          <label for="phone">연락처</label>
+          <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" />
+        </div>
+        <div class="form-group">
+          <label for="type">문의 유형</label>
+          <select id="type" name="type" required>
+            <option value="" disabled selected>선택해 주세요</option>
+            <option value="광고/마케팅">광고 / 마케팅</option>
+            <option value="콘텐츠 제휴">콘텐츠 제휴</option>
+            <option value="기술 협력">기술 협력</option>
+            <option value="기타">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="message">문의 내용</label>
+          <textarea id="message" name="message" rows="5" placeholder="문의 내용을 입력해 주세요." required></textarea>
+        </div>
+        <button type="submit" class="submit-btn">문의 보내기</button>
+      </form>
+    </div>
 
-      <button type="submit" class="submit-btn">문의 보내기</button>
-    </form>
-  </div>
+    <!-- ===== 댓글 ===== -->
+    <div class="comments-section">
+      <h2>댓글</h2>
+      <div id="disqus_thread"></div>
+      <script>
+        (function() {
+          var d = document, s = d.createElement('script');
+          s.src = 'https://workers-1.disqus.com/embed.js';
+          s.setAttribute('data-timestamp', +new Date());
+          (d.head || d.body).appendChild(s);
+        })();
+      </script>
+      <noscript>댓글을 보려면 JavaScript를 활성화하세요. <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
 
-  <div class="comments-section">
-    <h2>댓글</h2>
-    <div id="disqus_thread"></div>
-    <script>
-      (function() {
-        var d = document, s = d.createElement('script');
-        s.src = 'https://workers-1.disqus.com/embed.js';
-        s.setAttribute('data-timestamp', +new Date());
-        (d.head || d.body).appendChild(s);
-      })();
-    </script>
-    <noscript>댓글을 보려면 JavaScript를 활성화하세요. <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-  </div>
+  </div><!-- /.page-wrapper -->
 
   <script defer type="text/javascript" src="/main.js"></script>
 </body>
