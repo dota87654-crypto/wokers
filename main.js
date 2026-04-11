@@ -871,10 +871,11 @@ async function handleAddTodo() {
       cachedTodos.push(...newItems);
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
-      const todoArray = dates.map(date => ({
-        user_id: currentUser.id, headline, text: textEl.value.trim(),
-        date, time: todoTime, priority: todoPriority, completed: false, tag_id: selectedTagId || null,
-      }));
+      const todoArray = dates.map(date => {
+        const item = { user_id: currentUser.id, headline, text: textEl.value.trim(), date, time: todoTime, completed: false, tag_id: selectedTagId || null };
+        if (todoPriority !== null) item.priority = todoPriority;
+        return item;
+      });
       const { data, error } = await db.from('todos').insert(todoArray).select();
       if (!error) { cachedTodos.push(...data); }
     }
@@ -898,8 +899,10 @@ async function handleAddTodo() {
       const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime, priority: todoPriority, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
       cachedTodos.push(newItem);
 
+      const insertPayload = { user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, completed: false, tag_id: newItem.tag_id };
+      if (newItem.priority !== null) insertPayload.priority = newItem.priority;
       const { data, error } = await db.from('todos')
-        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, priority: newItem.priority, completed: false, tag_id: newItem.tag_id }])
+        .insert([insertPayload])
         .select().single();
 
       if (!error) {
@@ -943,7 +946,9 @@ async function editTodo(id, headline, text, date, tagId, time, priority) {
   editingId = null;
   renderTodoList(); renderCalendar();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
-  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null, time: time || null, priority: priority ?? null }).eq('id', id);
+  const updatePayload = { headline, text, date: date || null, tag_id: tagId || null, time: time || null };
+  if (priority !== undefined) updatePayload.priority = priority ?? null;
+  await db.from('todos').update(updatePayload).eq('id', id);
 }
 
 // ===================================================
