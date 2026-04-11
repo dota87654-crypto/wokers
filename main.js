@@ -872,7 +872,8 @@ async function handleAddTodo() {
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
       const todoArray = dates.map(date => {
-        const item = { user_id: currentUser.id, headline, text: textEl.value.trim(), date, time: todoTime, completed: false, tag_id: selectedTagId || null };
+        const item = { user_id: currentUser.id, headline, text: textEl.value.trim(), date, completed: false, tag_id: selectedTagId || null };
+        if (todoTime)              item.time     = todoTime;
         if (todoPriority !== null) item.priority = todoPriority;
         return item;
       });
@@ -899,8 +900,9 @@ async function handleAddTodo() {
       const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime, priority: todoPriority, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
       cachedTodos.push(newItem);
 
-      const insertPayload = { user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, completed: false, tag_id: newItem.tag_id };
-      if (newItem.priority !== null) insertPayload.priority = newItem.priority;
+      const insertPayload = { user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false, tag_id: newItem.tag_id };
+      if (newItem.time)                  insertPayload.time     = newItem.time;
+      if (newItem.priority !== null)     insertPayload.priority = newItem.priority;
       const { data, error } = await db.from('todos')
         .insert([insertPayload])
         .select().single();
@@ -946,8 +948,10 @@ async function editTodo(id, headline, text, date, tagId, time, priority) {
   editingId = null;
   renderTodoList(); renderCalendar();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
-  const updatePayload = { headline, text, date: date || null, tag_id: tagId || null, time: time || null };
-  if (priority !== undefined) updatePayload.priority = priority ?? null;
+  const updatePayload = { headline, text, date: date || null, tag_id: tagId || null };
+  if (time)                    updatePayload.time     = time;
+  else if (todo.time)          updatePayload.time     = null; // 기존 시간 지우기
+  if (priority !== undefined)  updatePayload.priority = priority ?? null;
   await db.from('todos').update(updatePayload).eq('id', id);
 }
 
