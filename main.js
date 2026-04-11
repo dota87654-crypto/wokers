@@ -576,6 +576,8 @@ async function fetchTodos() {
 
 let currentFilter = 'all';
 let editingId     = null;
+let selectionMode = false;
+let selectedIds   = new Set();
 
 function escapeHtml(str) {
   return String(str)
@@ -600,12 +602,20 @@ function renderIncompletePanel() {
 }
 
 // ---- 할 일 목록 ----
-function renderTodoList() {
-  const listEl = document.getElementById('todo-list');
+function getFilteredTodos() {
+  const todayStr = toDateStr(new Date());
   let todos = [...cachedTodos];
   if (currentFilter === 'incomplete') todos = todos.filter(t => !t.completed);
   if (currentFilter === 'complete')   todos = todos.filter(t =>  t.completed);
+  if (currentFilter === 'today')      todos = todos.filter(t => t.date === todayStr);
+  if (currentFilter === 'future')     todos = todos.filter(t => t.date && t.date > todayStr);
   if (filterTagId)                    todos = todos.filter(t => t.tag_id === filterTagId);
+  return todos;
+}
+
+function renderTodoList() {
+  const listEl = document.getElementById('todo-list');
+  let todos = getFilteredTodos();
   todos.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
     return (a.date || '9999').localeCompare(b.date || '9999');
@@ -616,12 +626,29 @@ function renderTodoList() {
   listEl.innerHTML = todos.map(todo => {
     const title   = escapeHtml(getTodoTitle(todo));
     const content = escapeHtml(getTodoContent(todo));
-
-    const tag    = getTag(todo.tag_id);
+    const tag     = getTag(todo.tag_id);
     const tagHtml = tag
       ? `<span class="tag-pill" style="background:${tag.color};color:${getTextColor(tag.color)};">${escapeHtml(tag.name)}</span>`
       : '';
 
+    // ---- 선택 모드 ----
+    if (selectionMode) {
+      const checked = selectedIds.has(todo.id);
+      return `
+        <div class="todo-item ${todo.completed ? 'completed' : ''} selectable ${checked ? 'sel-checked' : ''}" data-id="${todo.id}">
+          <input type="checkbox" class="todo-select-cb" data-id="${todo.id}" ${checked ? 'checked' : ''} />
+          <div class="todo-item-content">
+            <div class="todo-item-top">
+              <span class="todo-item-headline">${title}</span>
+              ${tagHtml}
+            </div>
+            ${content ? `<span class="todo-item-text">${content}</span>` : ''}
+            ${todo.date ? `<span class="todo-item-date">📅 ${todo.date}</span>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // ---- 수정 폼 ----
     if (editingId === todo.id) {
       return `
         <div class="todo-item editing" data-id="${todo.id}">
@@ -637,6 +664,8 @@ function renderTodoList() {
           </div>
         </div>`;
     }
+
+    // ---- 일반 ----
     return `
       <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
         <button class="todo-check-btn" data-id="${todo.id}">${todo.completed ? '✓' : '○'}</button>
@@ -654,6 +683,27 @@ function renderTodoList() {
         </div>
       </div>`;
   }).join('');
+
+  if (selectionMode) {
+    // 선택 모드 체크박스 이벤트
+    listEl.querySelectorAll('.todo-select-cb').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) selectedIds.add(cb.dataset.id);
+        else selectedIds.delete(cb.dataset.id);
+        cb.closest('.todo-item').classList.toggle('sel-checked', cb.checked);
+        updateSelectionBar();
+      });
+    });
+    listEl.querySelectorAll('.todo-item.selectable').forEach(item => {
+      item.addEventListener('click', e => {
+        if (e.target.type === 'checkbox') return;
+        const cb = item.querySelector('.todo-select-cb');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+    return;
+  }
 
   listEl.querySelectorAll('.todo-check-btn').forEach(btn =>
     btn.addEventListener('click', () => toggleTodo(btn.dataset.id)));
@@ -1125,6 +1175,94 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     renderTodoList();
   });
 });
+
+// ===================================================
+//  선택 모드
+// ===================================================
+function enterSelectionMode() {
+  selectionMode = true;
+  selectedIds.clear();
+  document.getElementById('selection-bar').style.display = 'flex';
+  renderTodoList();
+  updateSelectionBar();
+}
+
+function exitSelectionMode() {
+  selectionMode = false;
+  selectedIds.clear();
+  document.getElementById('selection-bar').style.display = 'none';
+  renderTodoList();
+}
+
+function updateSelectionBar() {
+  const countEl = document.getElementById('sel-count');
+  const allCb   = document.getElementById('select-all-cb');
+  if (countEl) countEl.textContent = `${selectedIds.size}개 선택`;
+  const visibleIds = getFilteredTodos().map(t => t.id);
+  if (allCb && visibleIds.length > 0) {
+    const allChecked = visibleIds.every(id => selectedIds.has(id));
+    allCb.indeterminate = selectedIds.size > 0 && !allChecked;
+    allCb.checked = allChecked;
+  }
+}
+
+async function deleteSelected() {
+  if (!selectedIds.size) return;
+  if (!confirm(`${selectedIds.size}개의 계획을 삭제할까요?`)) return;
+  const ids = [...selectedIds];
+  cachedTodos = cachedTodos.filter(t => !ids.includes(t.id));
+  exitSelectionMode();
+  renderIncompletePanel(); renderCalendar();
+  if (isGuest) {
+    localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
+  } else {
+    await Promise.all(ids.map(id => db.from('todos').delete().eq('id', id)));
+  }
+}
+
+async function deleteAllVisible() {
+  const visible = getFilteredTodos();
+  if (!visible.length) return;
+  if (!confirm(`현재 목록의 계획 ${visible.length}개를 모두 삭제할까요?`)) return;
+  const ids = visible.map(t => t.id);
+  cachedTodos = cachedTodos.filter(t => !ids.includes(t.id));
+  renderTodoList(); renderIncompletePanel(); renderCalendar();
+  if (isGuest) {
+    localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
+  } else {
+    await Promise.all(ids.map(id => db.from('todos').delete().eq('id', id)));
+  }
+}
+
+// ⋮ 메뉴
+document.getElementById('sidebar-menu-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd = document.getElementById('sidebar-menu-dropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('menu-select-mode').addEventListener('click', () => {
+  document.getElementById('sidebar-menu-dropdown').style.display = 'none';
+  enterSelectionMode();
+});
+document.getElementById('menu-delete-all').addEventListener('click', () => {
+  document.getElementById('sidebar-menu-dropdown').style.display = 'none';
+  deleteAllVisible();
+});
+document.addEventListener('click', () => {
+  const dd = document.getElementById('sidebar-menu-dropdown');
+  if (dd) dd.style.display = 'none';
+});
+
+// 선택 바 이벤트
+document.getElementById('select-all-cb').addEventListener('change', function () {
+  const visibleIds = getFilteredTodos().map(t => t.id);
+  if (this.checked) visibleIds.forEach(id => selectedIds.add(id));
+  else selectedIds.clear();
+  renderTodoList();
+  updateSelectionBar();
+});
+document.getElementById('sel-delete-btn').addEventListener('click', deleteSelected);
+document.getElementById('sel-cancel-btn').addEventListener('click', exitSelectionMode);
 
 // ===================================================
 //  문의 모달

@@ -94,11 +94,30 @@
         <div class="plan-sidebar">
           <div class="plan-sidebar-header">
             <span class="todo-section-title">계획 목록</span>
-            <div class="todo-filter">
-              <button class="filter-btn active" data-filter="all">전체</button>
-              <button class="filter-btn" data-filter="incomplete">미완료</button>
-              <button class="filter-btn" data-filter="complete">완료</button>
+            <div class="sidebar-menu-wrap">
+              <button class="sidebar-menu-btn" id="sidebar-menu-btn">⋮</button>
+              <div class="sidebar-menu-dropdown" id="sidebar-menu-dropdown" style="display:none;">
+                <button class="sidebar-menu-item" id="menu-select-mode">선택하기</button>
+                <div class="sidebar-menu-divider"></div>
+                <button class="sidebar-menu-item danger" id="menu-delete-all">전체 삭제</button>
+              </div>
             </div>
+          </div>
+          <div class="todo-filter">
+            <button class="filter-btn active" data-filter="all">전체</button>
+            <button class="filter-btn" data-filter="incomplete">미완료</button>
+            <button class="filter-btn" data-filter="complete">완료</button>
+            <button class="filter-btn" data-filter="today">오늘</button>
+            <button class="filter-btn" data-filter="future">미래</button>
+          </div>
+          <div class="selection-bar" id="selection-bar" style="display:none;">
+            <label class="select-all-label">
+              <input type="checkbox" id="select-all-cb" />
+              <span>전체 선택</span>
+            </label>
+            <span class="sel-count" id="sel-count">0개 선택</span>
+            <button class="sel-delete-btn" id="sel-delete-btn">삭제</button>
+            <button class="sel-cancel-btn" id="sel-cancel-btn">취소</button>
           </div>
           <!-- 태그 필터 -->
           <div class="tag-filter-row" id="tag-filter-row"></div>
