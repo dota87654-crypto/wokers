@@ -87,10 +87,13 @@
         <div class="plan-sidebar">
           <div class="plan-sidebar-header">
             <span class="todo-section-title">계획 목록</span>
-            <div class="todo-filter">
-              <button class="filter-btn active" data-filter="all">전체</button>
-              <button class="filter-btn" data-filter="incomplete">미완료</button>
-              <button class="filter-btn" data-filter="complete">완료</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button class="tag-manage-btn" id="tag-manage-btn">🏷 태그</button>
+              <div class="todo-filter">
+                <button class="filter-btn active" data-filter="all">전체</button>
+                <button class="filter-btn" data-filter="incomplete">미완료</button>
+                <button class="filter-btn" data-filter="complete">완료</button>
+              </div>
             </div>
           </div>
           <div id="todo-list"></div>
@@ -121,6 +124,10 @@
         <div class="form-group">
           <label for="todo-date-input">시작 날짜</label>
           <input type="date" id="todo-date-input" class="modal-date-input" />
+        </div>
+        <div class="form-group">
+          <label>태그 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
+          <div class="tag-selector" id="tag-selector"></div>
         </div>
 
         <!-- 반복 계획 -->
@@ -162,6 +169,28 @@
         </div>
 
         <button class="todo-add-btn" id="todo-add-btn" style="width:100%;padding:12px;margin-top:4px;">추가하기</button>
+      </div>
+    </div>
+
+    <!-- ===== 태그 관리 모달 ===== -->
+    <div class="modal-overlay" id="tag-manage-modal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true" style="max-width:400px;">
+        <button class="modal-close" id="tag-manage-close">✕</button>
+        <h2 class="modal-title">태그 관리</h2>
+
+        <div class="tag-manage-list" id="tag-manage-list"></div>
+
+        <div class="tag-create-section">
+          <div class="form-group">
+            <label for="tag-name-input">새 태그 이름</label>
+            <input type="text" id="tag-name-input" class="todo-input" placeholder="태그 이름 입력" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label>색상 선택</label>
+            <div class="tag-color-picker" id="tag-color-picker"></div>
+          </div>
+          <button class="todo-add-btn" id="tag-create-btn" style="width:100%;">태그 추가</button>
+        </div>
       </div>
     </div>
 

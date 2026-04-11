@@ -22,7 +22,7 @@ function handleSession(session) {
   if (currentUser) {
     showUserInfo();
     hideLoginOverlay();
-    fetchTodos();
+    fetchTags().then(() => fetchTodos());
     checkAttendanceAndStreak();
   } else {
     showLoginOverlay();
@@ -232,9 +232,12 @@ function renderCalendar() {
     if (isSel)    cls += ' selected';
     if (plans.length) cls += ' has-plans';
 
-    const eventsHtml = plans.slice(0, 2).map(p =>
-      `<div class="cal-event-item${p.completed ? ' done' : ''}">${escapeHtml(getTodoTitle(p))}</div>`
-    ).join('');
+    const eventsHtml = plans.slice(0, 2).map(p => {
+      const tag = getTag(p.tag_id);
+      const bg  = p.completed ? '#bbb' : (tag ? tag.color : '#4f8ef7');
+      const fg  = p.completed ? '#fff' : (tag ? getTextColor(tag.color) : '#fff');
+      return `<div class="cal-event-item${p.completed ? ' done' : ''}" style="background:${bg};color:${fg};">${escapeHtml(getTodoTitle(p))}</div>`;
+    }).join('');
     const moreHtml = plans.length > 2 ? `<div class="cal-event-more">+${plans.length - 2} 더</div>` : '';
 
     html += `<div class="${cls}" data-date="${dateStr}">
@@ -377,6 +380,11 @@ function renderTodoList() {
     const title   = escapeHtml(getTodoTitle(todo));
     const content = escapeHtml(getTodoContent(todo));
 
+    const tag    = getTag(todo.tag_id);
+    const tagHtml = tag
+      ? `<span class="tag-pill" style="background:${tag.color};color:${getTextColor(tag.color)};">${escapeHtml(tag.name)}</span>`
+      : '';
+
     if (editingId === todo.id) {
       return `
         <div class="todo-item editing" data-id="${todo.id}">
@@ -384,6 +392,7 @@ function renderTodoList() {
             <input type="text" class="edit-headline-input" placeholder="제목" value="${escapeHtml(todo.headline || todo.text || '')}" />
             <textarea class="edit-text-input" placeholder="내용 (선택사항)" rows="2">${escapeHtml(todo.headline ? (todo.text || '') : '')}</textarea>
             <input type="date" class="edit-date-input" value="${todo.date || ''}" />
+            <div class="tag-selector" id="edit-tag-selector-${todo.id}" data-selected="${todo.tag_id || ''}"></div>
             <div class="edit-actions">
               <button class="edit-save-btn" data-id="${todo.id}">저장</button>
               <button class="edit-cancel-btn">취소</button>
@@ -395,7 +404,10 @@ function renderTodoList() {
       <div class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
         <button class="todo-check-btn" data-id="${todo.id}">${todo.completed ? '✓' : '○'}</button>
         <div class="todo-item-content">
-          <span class="todo-item-headline">${title}</span>
+          <div class="todo-item-top">
+            <span class="todo-item-headline">${title}</span>
+            ${tagHtml}
+          </div>
           ${content ? `<span class="todo-item-text">${content}</span>` : ''}
           ${todo.date ? `<span class="todo-item-date">📅 ${todo.date}</span>` : ''}
         </div>
@@ -412,13 +424,22 @@ function renderTodoList() {
     btn.addEventListener('click', () => { editingId = btn.dataset.id; renderTodoList(); listEl.querySelector('.edit-headline-input')?.focus(); }));
   listEl.querySelectorAll('.todo-delete-btn').forEach(btn =>
     btn.addEventListener('click', () => deleteTodo(btn.dataset.id)));
+
+  // 수정 폼 태그 selector 초기화
+  listEl.querySelectorAll('[id^="edit-tag-selector-"]').forEach(el => {
+    const initTagId = el.dataset.selected || null;
+    renderTagSelector(el.id, initTagId, id => { el.dataset.selected = id || ''; });
+  });
+
   listEl.querySelectorAll('.edit-save-btn').forEach(btn =>
     btn.addEventListener('click', () => {
       const item     = btn.closest('.todo-item');
       const headline = item.querySelector('.edit-headline-input').value.trim();
       const text     = item.querySelector('.edit-text-input').value.trim();
       const date     = item.querySelector('.edit-date-input').value;
-      if (headline) editTodo(btn.dataset.id, headline, text, date);
+      const tagSel   = item.querySelector('[id^="edit-tag-selector-"]');
+      const tagId    = tagSel?.dataset.selected || null;
+      if (headline) editTodo(btn.dataset.id, headline, text, date, tagId);
     }));
   listEl.querySelectorAll('.edit-cancel-btn').forEach(btn =>
     btn.addEventListener('click', () => { editingId = null; renderTodoList(); }));
@@ -462,6 +483,7 @@ async function handleAddTodo() {
       text: textEl.value.trim(),
       date,
       completed: false,
+      tag_id: selectedTagId || null,
     }));
 
     // Supabase는 한 번에 최대 1000행 삽입 가능 — 500개로 제한했으므로 안전
@@ -477,11 +499,11 @@ async function handleAddTodo() {
   } else {
     // ---- 단일 계획 ----
     const tempId  = 'temp-' + Date.now();
-    const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, created_at: new Date().toISOString() };
+    const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
     cachedTodos.push(newItem);
 
     const { data, error } = await db.from('todos')
-      .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false }])
+      .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false, tag_id: newItem.tag_id }])
       .select().single();
 
     if (!error) {
@@ -513,14 +535,153 @@ async function deleteTodo(id) {
   await db.from('todos').delete().eq('id', id);
 }
 
-async function editTodo(id, headline, text, date) {
+async function editTodo(id, headline, text, date, tagId) {
   const todo = cachedTodos.find(t => t.id === id);
   if (!todo) return;
-  todo.headline = headline; todo.text = text; todo.date = date || null;
+  todo.headline = headline; todo.text = text; todo.date = date || null; todo.tag_id = tagId || null;
   editingId = null;
   renderTodoList(); renderCalendar();
-  await db.from('todos').update({ headline, text, date: date || null }).eq('id', id);
+  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null }).eq('id', id);
 }
+
+// ===================================================
+//  태그
+// ===================================================
+const TAG_COLORS = ['#e00404','#f7f70c','#62ec2b','#17e6f1','#0a6ce4','#be17f1','#ed357e'];
+
+let cachedTags    = [];
+let selectedTagId = null;
+let tagColorPick  = TAG_COLORS[0];
+
+function getTextColor(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return (0.299*r + 0.587*g + 0.114*b) / 255 > 0.5 ? '#000' : '#fff';
+}
+
+function getTag(tagId) {
+  return cachedTags.find(t => t.id === tagId) || null;
+}
+
+async function fetchTags() {
+  const { data } = await db.from('tags').select('*').order('created_at', { ascending: true });
+  if (data) cachedTags = data;
+}
+
+// 태그 선택 UI 렌더링
+function renderTagSelector(containerId, currentTagId, onSelect) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const noneSelected = !currentTagId;
+  container.innerHTML = `
+    <button type="button" class="tag-option ${noneSelected ? 'none-selected' : ''}" data-id="">없음</button>
+    ${cachedTags.map(t => {
+      const isSelected = currentTagId === t.id;
+      return `<button type="button"
+        class="tag-option tag-colored ${isSelected ? 'color-selected' : ''}"
+        data-id="${t.id}"
+        style="background:${t.color};color:${getTextColor(t.color)};">
+        ${escapeHtml(t.name)}
+      </button>`;
+    }).join('')}
+  `;
+
+  container.querySelectorAll('.tag-option').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.dataset.id || null;
+      onSelect(id);
+      renderTagSelector(containerId, id, onSelect);
+    });
+  });
+}
+
+// 태그 관리 모달
+const tagManageModal = document.getElementById('tag-manage-modal');
+const tagManageClose = document.getElementById('tag-manage-close');
+const tagManageBtn   = document.getElementById('tag-manage-btn');
+
+function openTagManageModal() {
+  renderTagManageList();
+  renderTagColorPicker();
+  tagManageModal.classList.add('active');
+  tagManageModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTagManageModal() {
+  tagManageModal.classList.remove('active');
+  tagManageModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function renderTagManageList() {
+  const listEl = document.getElementById('tag-manage-list');
+  if (!cachedTags.length) {
+    listEl.innerHTML = '<div class="tag-manage-empty">아직 태그가 없습니다.</div>';
+    return;
+  }
+  listEl.innerHTML = cachedTags.map(t => `
+    <div class="tag-manage-item">
+      <span class="tag-pill" style="background:${t.color};color:${getTextColor(t.color)};">${escapeHtml(t.name)}</span>
+      <button class="tag-delete-btn" data-id="${t.id}">삭제</button>
+    </div>`).join('');
+
+  listEl.querySelectorAll('.tag-delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteTag(btn.dataset.id));
+  });
+}
+
+function renderTagColorPicker() {
+  const picker = document.getElementById('tag-color-picker');
+  picker.innerHTML = TAG_COLORS.map(color => `
+    <div class="tag-color-swatch ${tagColorPick === color ? 'selected' : ''}"
+         data-color="${color}"
+         style="background:${color};"></div>`).join('');
+
+  picker.querySelectorAll('.tag-color-swatch').forEach(s => {
+    s.addEventListener('click', () => {
+      tagColorPick = s.dataset.color;
+      renderTagColorPicker();
+    });
+  });
+}
+
+async function createTag() {
+  const nameInput = document.getElementById('tag-name-input');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+
+  const { data, error } = await db.from('tags')
+    .insert([{ user_id: currentUser.id, name, color: tagColorPick }])
+    .select().single();
+
+  if (!error) {
+    cachedTags.push(data);
+    nameInput.value = '';
+    renderTagManageList();
+    renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+  }
+}
+
+async function deleteTag(id) {
+  const { error } = await db.from('tags').delete().eq('id', id);
+  if (!error) {
+    cachedTags = cachedTags.filter(t => t.id !== id);
+    if (selectedTagId === id) selectedTagId = null;
+    renderTagManageList();
+    renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+    renderTodoList();
+    renderCalendar();
+  }
+}
+
+tagManageBtn.addEventListener('click', openTagManageModal);
+tagManageClose.addEventListener('click', closeTagManageModal);
+tagManageModal.addEventListener('click', e => { if (e.target === tagManageModal) closeTagManageModal(); });
+document.getElementById('tag-create-btn').addEventListener('click', createTag);
+document.getElementById('tag-name-input').addEventListener('keydown', e => { if (e.key === 'Enter') createTag(); });
 
 // ===================================================
 //  반복 계획
@@ -612,6 +773,7 @@ const openPlanAddBtn = document.getElementById('open-plan-add');
 
 function openPlanAddModal() {
   renderIncompletePanel();
+  renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
   planAddModal.classList.add('active');
   planAddModal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
@@ -622,6 +784,7 @@ function closePlanAddModal() {
   planAddModal.classList.remove('active');
   planAddModal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+  selectedTagId = null;
   resetRepeatUI();
 }
 
