@@ -87,15 +87,14 @@
         <div class="plan-sidebar">
           <div class="plan-sidebar-header">
             <span class="todo-section-title">계획 목록</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <button class="tag-manage-btn" id="tag-manage-btn">🏷 태그</button>
-              <div class="todo-filter">
-                <button class="filter-btn active" data-filter="all">전체</button>
-                <button class="filter-btn" data-filter="incomplete">미완료</button>
-                <button class="filter-btn" data-filter="complete">완료</button>
-              </div>
+            <div class="todo-filter">
+              <button class="filter-btn active" data-filter="all">전체</button>
+              <button class="filter-btn" data-filter="incomplete">미완료</button>
+              <button class="filter-btn" data-filter="complete">완료</button>
             </div>
           </div>
+          <!-- 태그 필터 -->
+          <div class="tag-filter-row" id="tag-filter-row"></div>
           <div id="todo-list"></div>
         </div>
       </div>
@@ -126,7 +125,10 @@
           <input type="date" id="todo-date-input" class="modal-date-input" />
         </div>
         <div class="form-group">
-          <label>태그 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
+          <div class="tag-label-row">
+            <label>태그 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
+            <button type="button" id="tag-manage-btn" class="tag-manage-link">+ 태그 관리</button>
+          </div>
           <div class="tag-selector" id="tag-selector"></div>
         </div>
 

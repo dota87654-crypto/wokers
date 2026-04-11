@@ -22,7 +22,7 @@ function handleSession(session) {
   if (currentUser) {
     showUserInfo();
     hideLoginOverlay();
-    fetchTags().then(() => fetchTodos());
+    fetchTags().then(() => { renderTagFilter(); fetchTodos(); });
     checkAttendanceAndStreak();
   } else {
     showLoginOverlay();
@@ -369,6 +369,7 @@ function renderTodoList() {
   let todos = [...cachedTodos];
   if (currentFilter === 'incomplete') todos = todos.filter(t => !t.completed);
   if (currentFilter === 'complete')   todos = todos.filter(t =>  t.completed);
+  if (filterTagId)                    todos = todos.filter(t => t.tag_id === filterTagId);
   todos.sort((a, b) => {
     if (a.completed !== b.completed) return a.completed ? 1 : -1;
     return (a.date || '9999').localeCompare(b.date || '9999');
@@ -550,7 +551,8 @@ async function editTodo(id, headline, text, date, tagId) {
 const TAG_COLORS = ['#e00404','#f7f70c','#62ec2b','#17e6f1','#0a6ce4','#be17f1','#ed357e'];
 
 let cachedTags    = [];
-let selectedTagId = null;
+let selectedTagId = null;  // 등록 모달에서 선택한 태그
+let filterTagId   = null;  // 사이드바 태그 필터
 let tagColorPick  = TAG_COLORS[0];
 
 function getTextColor(hex) {
@@ -567,6 +569,37 @@ function getTag(tagId) {
 async function fetchTags() {
   const { data } = await db.from('tags').select('*').order('created_at', { ascending: true });
   if (data) cachedTags = data;
+}
+
+// 사이드바 태그 필터 렌더링
+function renderTagFilter() {
+  const row = document.getElementById('tag-filter-row');
+  if (!row) return;
+
+  if (!cachedTags.length) { row.innerHTML = ''; return; }
+
+  const allActive = !filterTagId;
+  row.innerHTML = `
+    <button class="tag-filter-btn all-btn ${allActive ? 'active' : ''}" data-id="">전체</button>
+    ${cachedTags.map(t => {
+      const isActive = filterTagId === t.id;
+      const border   = isActive ? `border-color:${t.color};box-shadow:0 0 0 2px ${t.color}40;` : '';
+      return `<button class="tag-filter-btn" data-id="${t.id}"
+        style="background:${t.color};color:${getTextColor(t.color)};${border}">
+        ${escapeHtml(t.name)}
+      </button>`;
+    }).join('')}
+  `;
+
+  row.querySelectorAll('.tag-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id || null;
+      // 같은 태그 클릭 시 해제
+      filterTagId = filterTagId === id ? null : id;
+      renderTagFilter();
+      renderTodoList();
+    });
+  });
 }
 
 // 태그 선택 UI 렌더링
@@ -662,6 +695,7 @@ async function createTag() {
     nameInput.value = '';
     renderTagManageList();
     renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+    renderTagFilter();
   }
 }
 
@@ -670,8 +704,10 @@ async function deleteTag(id) {
   if (!error) {
     cachedTags = cachedTags.filter(t => t.id !== id);
     if (selectedTagId === id) selectedTagId = null;
+    if (filterTagId === id)   filterTagId   = null;
     renderTagManageList();
     renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+    renderTagFilter();
     renderTodoList();
     renderCalendar();
   }
@@ -841,7 +877,8 @@ successClose.addEventListener('click', closeModal);
 modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (planAddModal.classList.contains('active')) closePlanAddModal();
+    if (tagManageModal.classList.contains('active')) closeTagManageModal();
+    else if (planAddModal.classList.contains('active')) closePlanAddModal();
     else if (planModal.classList.contains('active')) closePlanModal();
     else if (modal.classList.contains('active')) closeModal();
   }
