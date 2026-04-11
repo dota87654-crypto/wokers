@@ -276,22 +276,22 @@ body {
 }
 
 .cal-cell {
-  aspect-ratio: 1;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
+  align-items: flex-start;
+  padding: 5px 5px 4px;
   border-radius: 8px;
   cursor: pointer;
   position: relative;
   color: #333;
   transition: background 0.15s;
   user-select: none;
+  overflow: hidden;
 }
 
 .cal-cell:hover:not(.empty) { background: #e8f0fe; }
-.cal-cell.empty { cursor: default; }
+.cal-cell.empty { cursor: default; min-height: 64px; }
 
 .cal-cell.sun { color: #e74c3c; }
 .cal-cell.sat { color: #3498db; }
@@ -299,27 +299,60 @@ body {
 .cal-cell.today {
   background: #4f8ef7;
   color: #fff !important;
-  font-weight: 700;
 }
 
 .cal-cell.today:hover { background: #3a7be0; }
 
 .cal-cell.selected:not(.today) {
   background: #e8f0fe;
-  font-weight: 600;
   color: #4f8ef7 !important;
 }
 
-.cal-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #ff6b6b;
-  position: absolute;
-  bottom: 3px;
+.cal-day-num {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 3px;
+  flex-shrink: 0;
 }
 
-.cal-cell.today .cal-dot { background: rgba(255,255,255,0.8); }
+.cal-events {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-event-item {
+  font-size: 0.62rem;
+  background: #4f8ef7;
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  line-height: 1.4;
+}
+
+.cal-event-item.done {
+  background: #bbb;
+  text-decoration: line-through;
+}
+
+.cal-cell.today .cal-event-item {
+  background: rgba(255,255,255,0.3);
+  color: #fff;
+}
+
+.cal-event-more {
+  font-size: 0.6rem;
+  color: #888;
+  padding-left: 2px;
+}
+
+.cal-cell.today .cal-event-more { color: rgba(255,255,255,0.75); }
 
 /* ===================================================
    TODO SECTION
@@ -434,6 +467,26 @@ body {
   border-color: #4f8ef7;
 }
 
+.todo-content-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: #fafafa;
+  color: #333;
+  resize: none;
+  transition: border-color 0.2s;
+  margin-top: 6px;
+}
+
+.todo-content-input:focus {
+  outline: none;
+  border-color: #4f8ef7;
+  background: #fff;
+}
+
 .todo-add-btn {
   padding: 10px 14px;
   background: #4f8ef7;
@@ -539,16 +592,112 @@ body {
 
 .todo-item-content { flex: 1; min-width: 0; }
 
-.todo-item-text {
-  font-size: 0.88rem;
+.todo-item-headline {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
   word-break: break-word;
   line-height: 1.4;
+  color: #1a1a2e;
+}
+
+.todo-item.completed .todo-item-headline {
+  text-decoration: line-through;
+  color: #aaa;
+}
+
+.todo-item-text {
+  display: block;
+  font-size: 0.8rem;
+  color: #777;
+  word-break: break-word;
+  line-height: 1.4;
+  margin-top: 2px;
+  white-space: pre-wrap;
 }
 
 .todo-item-date {
+  display: block;
   font-size: 0.74rem;
   color: #aaa;
-  margin-top: 2px;
+  margin-top: 3px;
+}
+
+/* ---- Plan Detail Modal ---- */
+.plan-modal-box {
+  max-width: 400px;
+}
+
+.plan-modal-date {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 16px;
+  padding-right: 24px;
+}
+
+.plan-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.plan-modal-item {
+  background: #f8f9ff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #eef0f8;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.plan-modal-item.completed { opacity: 0.55; background: #f5f5f5; }
+.plan-modal-item.completed .plan-modal-headline { text-decoration: line-through; color: #aaa; }
+
+.plan-modal-check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #4f8ef7;
+  background: none;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #4f8ef7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.plan-modal-item.completed .plan-modal-check { background: #4f8ef7; color: #fff; }
+
+.plan-modal-body { flex: 1; min-width: 0; }
+
+.plan-modal-headline {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  word-break: break-word;
+}
+
+.plan-modal-content {
+  font-size: 0.83rem;
+  color: #666;
+  margin-top: 5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.plan-modal-empty {
+  text-align: center;
+  color: #bbb;
+  font-size: 0.9rem;
+  padding: 24px 0;
 }
 
 .todo-item-actions {

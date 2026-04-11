@@ -92,10 +92,11 @@
           <div class="todo-add-section">
             <div class="todo-section-title">계획 등록</div>
             <div class="todo-form-row">
-              <input type="text" id="todo-text" class="todo-input" placeholder="계획을 입력하세요..." autocomplete="off" />
+              <input type="text" id="todo-headline" class="todo-input" placeholder="제목 (헤드라인)" autocomplete="off" />
               <input type="date" id="todo-date-input" class="todo-date-input" />
               <button class="todo-add-btn" id="todo-add-btn">추가</button>
             </div>
+            <textarea id="todo-text" class="todo-content-input" placeholder="내용 (선택사항)" rows="2"></textarea>
           </div>
 
           <!-- 계획 목록 -->
@@ -114,6 +115,15 @@
         </div>
       </div>
     </section>
+
+    <!-- ===== 날짜별 계획 팝업 ===== -->
+    <div class="modal-overlay" id="plan-modal" aria-hidden="true">
+      <div class="modal-box plan-modal-box" role="dialog" aria-modal="true">
+        <button class="modal-close" id="plan-modal-close">✕</button>
+        <div class="plan-modal-date" id="plan-modal-date"></div>
+        <div class="plan-modal-list" id="plan-modal-list"></div>
+      </div>
+    </div>
 
     <!-- ===== 제휴 문의 모달 ===== -->
     <div class="modal-overlay" id="contact-modal" aria-hidden="true">
