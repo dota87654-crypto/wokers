@@ -95,6 +95,21 @@ body {
 
 .logout-btn:hover { background: #fee2e2; border-color: #e74c3c; color: #e74c3c; }
 
+/* ---- Streak Badge ---- */
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #ff6b35, #ffa751);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(255,107,53,0.35);
+  white-space: nowrap;
+}
+
 /* ---- Login Overlay ---- */
 .login-overlay {
   position: absolute;

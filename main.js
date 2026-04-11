@@ -23,9 +23,11 @@ function handleSession(session) {
     showUserInfo();
     hideLoginOverlay();
     fetchTodos();
+    checkAttendanceAndStreak();
   } else {
     showLoginOverlay();
     hideUserInfo();
+    hideStreakBadge();
     cachedTodos = [];
     renderTodoList();
     renderIncompletePanel();
@@ -45,6 +47,7 @@ function showUserInfo() {
 }
 
 function hideUserInfo() { document.getElementById('user-info').style.display = 'none'; }
+function hideStreakBadge() { document.getElementById('streak-badge').style.display = 'none'; }
 function showLoginOverlay() { document.getElementById('login-overlay').style.display = 'flex'; }
 function hideLoginOverlay() { document.getElementById('login-overlay').style.display = 'none'; }
 
@@ -59,6 +62,57 @@ async function signOut() { await db.auth.signOut(); }
 
 document.getElementById('google-login-btn').addEventListener('click', signInWithGoogle);
 document.getElementById('logout-btn').addEventListener('click', signOut);
+
+// ===================================================
+//  출석 & 연속 출석 스트릭
+// ===================================================
+async function checkAttendanceAndStreak() {
+  const today = toDateStr(new Date());
+
+  // 오늘 출석 기록 (중복 무시)
+  await db.from('attendance')
+    .upsert({ user_id: currentUser.id, date: today }, { onConflict: 'user_id,date' });
+
+  // 최근 365일 출석 기록 가져오기
+  const { data, error } = await db
+    .from('attendance')
+    .select('date')
+    .eq('user_id', currentUser.id)
+    .order('date', { ascending: false })
+    .limit(365);
+
+  if (error || !data?.length) return;
+
+  const dates = data.map(r => r.date);
+  const streak = calcStreak(dates, today);
+
+  const badge = document.getElementById('streak-badge');
+  const count  = document.getElementById('streak-count');
+  count.textContent = streak;
+  badge.style.display = 'flex';
+}
+
+function calcStreak(dates, today) {
+  // dates: 내림차순 정렬된 날짜 배열 (YYYY-MM-DD)
+  if (!dates.length) return 0;
+
+  // 오늘 또는 어제부터 시작하지 않으면 스트릭 없음
+  const yesterday = toDateStr(new Date(Date.now() - 86400000));
+  if (dates[0] !== today && dates[0] !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    // 이전 날짜가 현재 날짜보다 정확히 1일 전인지 확인
+    const prev = new Date(dates[i - 1]);
+    prev.setDate(prev.getDate() - 1);
+    if (toDateStr(prev) === dates[i]) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
 
 // ===================================================
 //  날짜 표시
