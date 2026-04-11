@@ -180,34 +180,147 @@ const WMO = {
   99: { text:'강한 우박 뇌우', icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
 };
 
-async function loadWeather() {
+let _weatherLat = null;
+let _weatherLon = null;
+let _weatherCity = '';
+
+async function fetchAndRenderWeather(lat, lon, cityName) {
   const el = document.getElementById('dash-weather');
-  if (!navigator.geolocation) { el.innerHTML = '<span class="weather-error">위치 정보를 지원하지 않습니다.</span>'; return; }
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const { latitude: lat, longitude: lon } = pos.coords;
-    try {
-      const [wRes, gRes] = await Promise.all([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`),
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`),
-      ]);
-      const wData = await wRes.json();
-      const gData = await gRes.json();
-      const cw  = wData.current_weather;
-      const wmo = WMO[cw.weathercode] || { text:'알 수 없음', icon:'🌡️', bg:'linear-gradient(135deg,#667eea,#764ba2)' };
-      const city = gData.address?.city || gData.address?.town || gData.address?.county || '현재 위치';
-      el.style.background = wmo.bg;
-      el.innerHTML = `<div class="weather-icon">${wmo.icon}</div>
-        <div>
-          <div class="weather-city">📍 ${city}</div>
-          <div class="weather-temp">${Math.round(cw.temperature)}°C</div>
-          <div class="weather-desc">${wmo.text}</div>
-          <div class="weather-wind">바람 ${cw.windspeed} km/h</div>
-        </div>`;
-    } catch { el.innerHTML = '<span class="weather-error">날씨 정보를 불러올 수 없습니다.</span>'; }
-  }, () => {
-    el.innerHTML = `<div class="weather-icon">📍</div>
-      <div><div class="weather-desc">위치 권한을 허용하면<br>날씨를 확인할 수 있습니다.</div></div>`;
+  try {
+    const requests = [
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`),
+    ];
+    if (!cityName) {
+      requests.push(fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`));
+    }
+    const results = await Promise.all(requests);
+    const wData = await results[0].json();
+
+    let city = cityName;
+    if (!city && results[1]) {
+      const gData = await results[1].json();
+      city = gData.address?.city || gData.address?.town || gData.address?.county || '현재 위치';
+    }
+
+    _weatherLat = lat; _weatherLon = lon; _weatherCity = city;
+
+    const cw  = wData.current_weather;
+    const wmo = WMO[cw.weathercode] || { text:'알 수 없음', icon:'🌡️', bg:'linear-gradient(135deg,#667eea,#764ba2)' };
+    el.style.background = wmo.bg;
+
+    const days  = ['일','월','화','수','목','금','토'];
+    const daily = wData.daily;
+    const weeklyHtml = daily ? daily.time.map((dateStr, i) => {
+      const d       = new Date(dateStr + 'T00:00:00');
+      const dayName = i === 0 ? '오늘' : days[d.getDay()];
+      const dWmo    = WMO[daily.weathercode[i]] || { icon:'🌡️' };
+      return `<div class="wdc">
+        <div class="wdc-day">${dayName}</div>
+        <div class="wdc-icon">${dWmo.icon}</div>
+        <div class="wdc-max">${Math.round(daily.temperature_2m_max[i])}°</div>
+        <div class="wdc-min">${Math.round(daily.temperature_2m_min[i])}°</div>
+      </div>`;
+    }).join('') : '';
+
+    el.innerHTML = `
+      <div class="weather-top">
+        <div class="weather-current">
+          <div class="weather-icon">${wmo.icon}</div>
+          <div class="weather-info">
+            <div class="weather-city-row">
+              <span class="weather-city">📍 ${city}</span>
+              <button class="weather-search-toggle" id="weather-search-toggle" title="다른 지역 검색">🔍</button>
+            </div>
+            <div class="weather-temp">${Math.round(cw.temperature)}°C</div>
+            <div class="weather-desc">${wmo.text}</div>
+            <div class="weather-wind">바람 ${cw.windspeed} km/h</div>
+          </div>
+        </div>
+        <div class="weather-weekly">${weeklyHtml}</div>
+      </div>
+      <div class="weather-search-row" id="weather-search-row" style="display:none;">
+        <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름 입력 (예: 부산, Tokyo, New York)" autocomplete="off" />
+        <button class="weather-search-btn" id="weather-search-btn">검색</button>
+      </div>`;
+
+    attachWeatherSearchEvents();
+  } catch {
+    el.innerHTML = '<span class="weather-error">날씨 정보를 불러올 수 없습니다.</span>';
+  }
+}
+
+async function searchCityWeather() {
+  const input = document.getElementById('weather-city-input');
+  const query = input?.value.trim();
+  if (!query) return;
+
+  const el = document.getElementById('dash-weather');
+  const prevBg = el.style.background;
+  input.disabled = true;
+
+  try {
+    const gRes  = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+    const gData = await gRes.json();
+    if (!gData.length) {
+      input.disabled = false;
+      input.focus();
+      input.style.borderColor = '#ff6b6b';
+      setTimeout(() => { input.style.borderColor = ''; }, 1500);
+      return;
+    }
+    const { lat, lon } = gData[0];
+    const addr = gData[0].address || {};
+    const city = addr.city || addr.town || addr.county || addr.state || query;
+    await fetchAndRenderWeather(parseFloat(lat), parseFloat(lon), city);
+  } catch {
+    input.disabled = false;
+    el.innerHTML = '<span class="weather-error">검색 중 오류가 발생했습니다.</span>';
+  }
+}
+
+function attachWeatherSearchEvents() {
+  const toggleBtn = document.getElementById('weather-search-toggle');
+  const searchRow = document.getElementById('weather-search-row');
+  const searchBtn = document.getElementById('weather-search-btn');
+  const input     = document.getElementById('weather-city-input');
+
+  toggleBtn?.addEventListener('click', () => {
+    const hidden = searchRow.style.display === 'none';
+    searchRow.style.display = hidden ? 'flex' : 'none';
+    if (hidden) setTimeout(() => input?.focus(), 50);
   });
+  searchBtn?.addEventListener('click', searchCityWeather);
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') searchCityWeather(); });
+}
+
+function loadWeather() {
+  const el = document.getElementById('dash-weather');
+  if (!navigator.geolocation) {
+    el.style.background = 'linear-gradient(135deg,#4b6cb7,#182848)';
+    el.innerHTML = `<div class="weather-no-location">
+      <div class="weather-desc">위치 정보를 지원하지 않습니다.</div>
+      <div class="weather-search-row" style="display:flex;margin-top:12px;">
+        <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름으로 검색하세요" autocomplete="off" />
+        <button class="weather-search-btn" id="weather-search-btn">검색</button>
+      </div>
+    </div>`;
+    attachWeatherSearchEvents();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => fetchAndRenderWeather(pos.coords.latitude, pos.coords.longitude),
+    () => {
+      el.style.background = 'linear-gradient(135deg,#4b6cb7,#182848)';
+      el.innerHTML = `<div class="weather-no-location">
+        <div class="weather-desc" style="margin-bottom:12px;">위치 권한이 없습니다.<br>도시를 직접 검색해보세요.</div>
+        <div class="weather-search-row" style="display:flex;">
+          <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름 입력 (예: 서울, 부산)" autocomplete="off" />
+          <button class="weather-search-btn" id="weather-search-btn">검색</button>
+        </div>
+      </div>`;
+      attachWeatherSearchEvents();
+    }
+  );
 }
 
 loadWeather();
