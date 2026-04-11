@@ -116,13 +116,52 @@
         </div>
         <div class="form-group">
           <label for="todo-text">내용 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
-          <textarea id="todo-text" class="todo-content-input" placeholder="상세 내용을 입력하세요" rows="3"></textarea>
+          <textarea id="todo-text" class="todo-content-input" placeholder="상세 내용을 입력하세요" rows="2"></textarea>
         </div>
         <div class="form-group">
-          <label for="todo-date-input">날짜</label>
-          <input type="date" id="todo-date-input" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:0.92rem;font-family:inherit;background:#fafafa;" />
+          <label for="todo-date-input">시작 날짜</label>
+          <input type="date" id="todo-date-input" class="modal-date-input" />
         </div>
-        <button class="todo-add-btn" id="todo-add-btn" style="width:100%;padding:12px;">추가하기</button>
+
+        <!-- 반복 계획 -->
+        <div class="form-group">
+          <label class="repeat-label">
+            <input type="checkbox" id="repeat-toggle" class="repeat-checkbox" />
+            <span>반복 계획</span>
+          </label>
+        </div>
+
+        <div class="repeat-section" id="repeat-section">
+          <div class="form-group" style="margin:0;">
+            <label style="margin-bottom:8px;display:block;">반복 주기</label>
+            <div class="repeat-type-grid">
+              <button type="button" class="repeat-type-btn active" data-type="daily">매일</button>
+              <button type="button" class="repeat-type-btn" data-type="3days">3일</button>
+              <button type="button" class="repeat-type-btn" data-type="weekly">매주</button>
+              <button type="button" class="repeat-type-btn" data-type="monthly">매달</button>
+              <button type="button" class="repeat-type-btn" data-type="3months">3개월</button>
+              <button type="button" class="repeat-type-btn" data-type="6months">반년</button>
+              <button type="button" class="repeat-type-btn" data-type="custom">임의</button>
+            </div>
+          </div>
+
+          <div class="form-group custom-interval-wrap" id="custom-interval-wrap" style="display:none;margin:0;">
+            <label>반복 간격</label>
+            <div class="custom-interval-row">
+              <input type="number" id="custom-interval" min="1" max="365" value="2" />
+              <span>일마다</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin:0;">
+            <label for="repeat-end-date">반복 종료일</label>
+            <input type="date" id="repeat-end-date" class="modal-date-input" />
+          </div>
+
+          <div class="repeat-preview" id="repeat-preview"></div>
+        </div>
+
+        <button class="todo-add-btn" id="todo-add-btn" style="width:100%;padding:12px;margin-top:4px;">추가하기</button>
       </div>
     </div>
 

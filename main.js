@@ -431,31 +431,71 @@ function renderTodoList() {
 
 // ---- CRUD ----
 async function handleAddTodo() {
-  if (!currentUser) return;
+  if (!currentUser) return false;
   const headlineEl = document.getElementById('todo-headline');
   const textEl     = document.getElementById('todo-text');
   const dateEl     = document.getElementById('todo-date-input');
   const headline   = headlineEl.value.trim();
-  if (!headline) { headlineEl.focus(); return; }
+  if (!headline) { headlineEl.focus(); return false; }
 
-  const tempId  = 'temp-' + Date.now();
-  const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, created_at: new Date().toISOString() };
-  cachedTodos.push(newItem);
+  const isRepeat = document.getElementById('repeat-toggle').checked;
+  const addBtn   = document.getElementById('todo-add-btn');
+
+  if (isRepeat) {
+    // ---- 반복 계획 ----
+    const endStr   = document.getElementById('repeat-end-date').value;
+    const interval = parseInt(document.getElementById('custom-interval').value) || 1;
+
+    if (!dateEl.value) { alert('시작 날짜를 선택해주세요.'); return false; }
+    if (!endStr)       { alert('반복 종료일을 선택해주세요.'); return false; }
+    if (new Date(endStr) < new Date(dateEl.value)) { alert('종료일이 시작일보다 이전입니다.'); return false; }
+
+    const dates = generateDates(dateEl.value, selectedRepeatType, interval, endStr);
+    if (!dates.length) { alert('생성할 계획이 없습니다.'); return false; }
+
+    addBtn.disabled = true;
+    addBtn.textContent = `${dates.length}개 등록 중...`;
+
+    const todoArray = dates.map(date => ({
+      user_id: currentUser.id,
+      headline,
+      text: textEl.value.trim(),
+      date,
+      completed: false,
+    }));
+
+    // Supabase는 한 번에 최대 1000행 삽입 가능 — 500개로 제한했으므로 안전
+    const { data, error } = await db.from('todos').insert(todoArray).select();
+
+    addBtn.disabled = false;
+    addBtn.textContent = '추가하기';
+
+    if (!error) {
+      cachedTodos.push(...data);
+    }
+
+  } else {
+    // ---- 단일 계획 ----
+    const tempId  = 'temp-' + Date.now();
+    const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, created_at: new Date().toISOString() };
+    cachedTodos.push(newItem);
+
+    const { data, error } = await db.from('todos')
+      .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false }])
+      .select().single();
+
+    if (!error) {
+      const idx = cachedTodos.findIndex(t => t.id === tempId);
+      if (idx !== -1) cachedTodos[idx] = data;
+    } else {
+      cachedTodos = cachedTodos.filter(t => t.id !== tempId);
+    }
+  }
+
   headlineEl.value = '';
   textEl.value     = '';
   renderTodoList(); renderIncompletePanel(); renderCalendar();
-
-  const { data, error } = await db.from('todos')
-    .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false }])
-    .select().single();
-
-  if (!error) {
-    const idx = cachedTodos.findIndex(t => t.id === tempId);
-    if (idx !== -1) cachedTodos[idx] = data;
-  } else {
-    cachedTodos = cachedTodos.filter(t => t.id !== tempId);
-    renderTodoList();
-  }
+  return true;
 }
 
 async function toggleTodo(id) {
@@ -483,6 +523,87 @@ async function editTodo(id, headline, text, date) {
 }
 
 // ===================================================
+//  반복 계획
+// ===================================================
+let selectedRepeatType = 'daily';
+
+function generateDates(startStr, repeatType, customInterval, endStr) {
+  const dates  = [];
+  const end    = new Date(endStr + 'T00:00:00');
+  let current  = new Date(startStr + 'T00:00:00');
+  const MAX    = 500;
+
+  while (current <= end && dates.length < MAX) {
+    dates.push(toDateStr(current));
+    const next = new Date(current);
+    switch (repeatType) {
+      case 'daily':   next.setDate(next.getDate() + 1); break;
+      case '3days':   next.setDate(next.getDate() + 3); break;
+      case 'weekly':  next.setDate(next.getDate() + 7); break;
+      case 'monthly': next.setMonth(next.getMonth() + 1); break;
+      case '3months': next.setMonth(next.getMonth() + 3); break;
+      case '6months': next.setMonth(next.getMonth() + 6); break;
+      case 'custom':  next.setDate(next.getDate() + (customInterval || 1)); break;
+    }
+    current = next;
+  }
+  return dates;
+}
+
+function updateRepeatPreview() {
+  const preview  = document.getElementById('repeat-preview');
+  const startStr = document.getElementById('todo-date-input').value;
+  const endStr   = document.getElementById('repeat-end-date').value;
+  const interval = parseInt(document.getElementById('custom-interval').value) || 1;
+
+  if (!startStr || !endStr) { preview.textContent = ''; return; }
+
+  if (new Date(endStr) < new Date(startStr)) {
+    preview.textContent = '종료일이 시작일보다 이전입니다.';
+    preview.className = 'repeat-preview warn';
+    return;
+  }
+
+  const dates = generateDates(startStr, selectedRepeatType, interval, endStr);
+  preview.textContent = `총 ${dates.length}개 계획이 등록됩니다.`;
+  preview.className = 'repeat-preview';
+}
+
+// 반복 주기 버튼
+document.querySelectorAll('.repeat-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.repeat-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedRepeatType = btn.dataset.type;
+    document.getElementById('custom-interval-wrap').style.display =
+      selectedRepeatType === 'custom' ? 'block' : 'none';
+    updateRepeatPreview();
+  });
+});
+
+// 반복 토글
+document.getElementById('repeat-toggle').addEventListener('change', function () {
+  document.getElementById('repeat-section').classList.toggle('visible', this.checked);
+  if (this.checked) updateRepeatPreview();
+});
+
+document.getElementById('repeat-end-date').addEventListener('change', updateRepeatPreview);
+document.getElementById('custom-interval').addEventListener('input', updateRepeatPreview);
+document.getElementById('todo-date-input').addEventListener('change', updateRepeatPreview);
+
+function resetRepeatUI() {
+  const toggle = document.getElementById('repeat-toggle');
+  toggle.checked = false;
+  document.getElementById('repeat-section').classList.remove('visible');
+  document.getElementById('repeat-preview').textContent = '';
+  document.getElementById('repeat-end-date').value = '';
+  selectedRepeatType = 'daily';
+  document.querySelectorAll('.repeat-type-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.getElementById('custom-interval-wrap').style.display = 'none';
+  document.getElementById('custom-interval').value = '2';
+}
+
+// ===================================================
 //  계획 등록 모달
 // ===================================================
 const planAddModal  = document.getElementById('plan-add-modal');
@@ -501,6 +622,7 @@ function closePlanAddModal() {
   planAddModal.classList.remove('active');
   planAddModal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
+  resetRepeatUI();
 }
 
 openPlanAddBtn.addEventListener('click', openPlanAddModal);
