@@ -574,10 +574,12 @@ async function fetchTodos() {
   }
 }
 
-let currentFilter = 'all';
-let editingId     = null;
-let selectionMode = false;
-let selectedIds   = new Set();
+let currentFilter    = 'all';
+let currentSort      = 'datetime';
+let editingId        = null;
+let selectionMode    = false;
+let selectedIds      = new Set();
+let isTimeUndecided  = false;
 
 function escapeHtml(str) {
   return String(str)
@@ -616,10 +618,20 @@ function getFilteredTodos() {
 function renderTodoList() {
   const listEl = document.getElementById('todo-list');
   let todos = getFilteredTodos();
-  todos.sort((a, b) => {
-    if (a.completed !== b.completed) return a.completed ? 1 : -1;
-    return (a.date || '9999').localeCompare(b.date || '9999');
-  });
+  if (currentSort === 'datetime') {
+    const tval = t => (t.time && t.time !== '미정') ? t.time : 'zz:zz';
+    todos.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      const dc = (a.date || '9999').localeCompare(b.date || '9999');
+      if (dc !== 0) return dc;
+      return tval(a).localeCompare(tval(b));
+    });
+  } else {
+    todos.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return (a.created_at || '').localeCompare(b.created_at || '');
+    });
+  }
 
   if (todos.length === 0) { listEl.innerHTML = '<div class="todo-empty">등록된 계획이 없습니다.</div>'; return; }
 
@@ -643,19 +655,25 @@ function renderTodoList() {
               ${tagHtml}
             </div>
             ${content ? `<span class="todo-item-text">${content}</span>` : ''}
-            ${todo.date ? `<span class="todo-item-date">📅 ${todo.date}</span>` : ''}
+            ${renderDateTimeBadge(todo)}
           </div>
         </div>`;
     }
 
     // ---- 수정 폼 ----
     if (editingId === todo.id) {
+      const editTimeVal = (todo.time && todo.time !== '미정') ? todo.time : '';
+      const editUndecided = todo.time === '미정';
       return `
         <div class="todo-item editing" data-id="${todo.id}">
           <div class="todo-edit-form">
             <input type="text" class="edit-headline-input" placeholder="제목" value="${escapeHtml(todo.headline || todo.text || '')}" />
             <textarea class="edit-text-input" placeholder="내용 (선택사항)" rows="2">${escapeHtml(todo.headline ? (todo.text || '') : '')}</textarea>
             <input type="date" class="edit-date-input" value="${todo.date || ''}" />
+            <div class="time-input-row">
+              <input type="time" class="edit-time-input modal-time-input" value="${editTimeVal}" ${editUndecided ? 'disabled' : ''} />
+              <button type="button" class="time-undecided-btn edit-time-undecided-btn${editUndecided ? ' active' : ''}">시간 미정</button>
+            </div>
             <div class="tag-selector" id="edit-tag-selector-${todo.id}" data-selected="${todo.tag_id || ''}"></div>
             <div class="edit-actions">
               <button class="edit-save-btn" data-id="${todo.id}">저장</button>
@@ -675,7 +693,7 @@ function renderTodoList() {
             ${tagHtml}
           </div>
           ${content ? `<span class="todo-item-text">${content}</span>` : ''}
-          ${todo.date ? `<span class="todo-item-date">📅 ${todo.date}</span>` : ''}
+          ${renderDateTimeBadge(todo)}
         </div>
         <div class="todo-item-actions">
           <button class="todo-edit-btn" data-id="${todo.id}">수정</button>
@@ -723,10 +741,13 @@ function renderTodoList() {
       const item     = btn.closest('.todo-item');
       const headline = item.querySelector('.edit-headline-input').value.trim();
       const text     = item.querySelector('.edit-text-input').value.trim();
-      const date     = item.querySelector('.edit-date-input').value;
-      const tagSel   = item.querySelector('[id^="edit-tag-selector-"]');
-      const tagId    = tagSel?.dataset.selected || null;
-      if (headline) editTodo(btn.dataset.id, headline, text, date, tagId);
+      const date         = item.querySelector('.edit-date-input').value;
+      const tagSel       = item.querySelector('[id^="edit-tag-selector-"]');
+      const tagId        = tagSel?.dataset.selected || null;
+      const timeUndBtn   = item.querySelector('.edit-time-undecided-btn');
+      const timeInput    = item.querySelector('.edit-time-input');
+      const time         = timeUndBtn?.classList.contains('active') ? '미정' : (timeInput?.value || null);
+      if (headline) editTodo(btn.dataset.id, headline, text, date, tagId, time);
     }));
   listEl.querySelectorAll('.edit-cancel-btn').forEach(btn =>
     btn.addEventListener('click', () => { editingId = null; renderTodoList(); }));
@@ -735,6 +756,24 @@ function renderTodoList() {
       if (e.key === 'Enter') input.closest('.todo-item').querySelector('.edit-save-btn').click();
       if (e.key === 'Escape') { editingId = null; renderTodoList(); }
     }));
+  // 수정 폼 시간 미정 토글
+  listEl.querySelectorAll('.edit-time-undecided-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const isActive = btn.classList.toggle('active');
+      const ti = btn.closest('.time-input-row').querySelector('.edit-time-input');
+      ti.disabled = isActive;
+      if (isActive) ti.value = '';
+    });
+  });
+}
+
+// ---- 날짜+시간 배지 렌더링 ----
+function renderDateTimeBadge(todo) {
+  const hasDate = !!todo.date;
+  const hasTime = !!todo.time;
+  if (!hasDate && !hasTime) return '';
+  const timeLabel = todo.time === '미정' ? '🕐 시간 미정' : (todo.time ? `🕐 ${todo.time}` : '');
+  return `<span class="todo-item-date">${hasDate ? `📅 ${todo.date}` : ''}${hasDate && hasTime ? '&ensp;' : ''}${timeLabel}</span>`;
 }
 
 // ---- CRUD ----
@@ -743,9 +782,11 @@ async function handleAddTodo() {
   const headlineEl = document.getElementById('todo-headline');
   const textEl     = document.getElementById('todo-text');
   const dateEl     = document.getElementById('todo-date-input');
+  const timeEl     = document.getElementById('todo-time-input');
   const headline   = headlineEl.value.trim();
   if (!headline) { headlineEl.focus(); return false; }
 
+  const todoTime = isTimeUndecided ? '미정' : (timeEl?.value || null);
   const isRepeat = document.getElementById('repeat-toggle').checked;
   const addBtn   = document.getElementById('todo-add-btn');
 
@@ -767,21 +808,16 @@ async function handleAddTodo() {
     if (isGuest) {
       const newItems = dates.map(date => ({
         id: 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2),
-        headline, text: textEl.value.trim(), date, completed: false,
+        headline, text: textEl.value.trim(), date, time: todoTime, completed: false,
         tag_id: selectedTagId || null, created_at: new Date().toISOString(),
       }));
       cachedTodos.push(...newItems);
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
       const todoArray = dates.map(date => ({
-        user_id: currentUser.id,
-        headline,
-        text: textEl.value.trim(),
-        date,
-        completed: false,
-        tag_id: selectedTagId || null,
+        user_id: currentUser.id, headline, text: textEl.value.trim(),
+        date, time: todoTime, completed: false, tag_id: selectedTagId || null,
       }));
-      // Supabase는 한 번에 최대 1000행 삽입 가능 — 500개로 제한했으므로 안전
       const { data, error } = await db.from('todos').insert(todoArray).select();
       if (!error) { cachedTodos.push(...data); }
     }
@@ -794,18 +830,18 @@ async function handleAddTodo() {
     if (isGuest) {
       const newItem = {
         id: 'guest-' + Date.now(),
-        headline, text: textEl.value.trim(), date: dateEl.value || null,
+        headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime,
         completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString(),
       };
       cachedTodos.push(newItem);
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
       const tempId  = 'temp-' + Date.now();
-      const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
+      const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
       cachedTodos.push(newItem);
 
       const { data, error } = await db.from('todos')
-        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false, tag_id: newItem.tag_id }])
+        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, completed: false, tag_id: newItem.tag_id }])
         .select().single();
 
       if (!error) {
@@ -840,14 +876,15 @@ async function deleteTodo(id) {
   await db.from('todos').delete().eq('id', id);
 }
 
-async function editTodo(id, headline, text, date, tagId) {
+async function editTodo(id, headline, text, date, tagId, time) {
   const todo = cachedTodos.find(t => t.id === id);
   if (!todo) return;
-  todo.headline = headline; todo.text = text; todo.date = date || null; todo.tag_id = tagId || null;
+  todo.headline = headline; todo.text = text; todo.date = date || null;
+  todo.tag_id = tagId || null; todo.time = time || null;
   editingId = null;
   renderTodoList(); renderCalendar();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
-  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null }).eq('id', id);
+  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null, time: time || null }).eq('id', id);
 }
 
 // ===================================================
@@ -1154,6 +1191,12 @@ function closePlanAddModal() {
   document.body.style.overflow = '';
   selectedTagId = null;
   resetRepeatUI();
+  // 시간 초기화
+  isTimeUndecided = false;
+  const timeEl    = document.getElementById('todo-time-input');
+  const timeBtn   = document.getElementById('time-undecided-btn');
+  if (timeEl)  { timeEl.value = ''; timeEl.disabled = false; }
+  if (timeBtn) timeBtn.classList.remove('active');
 }
 
 openPlanAddBtn.addEventListener('click', openPlanAddModal);
@@ -1244,6 +1287,38 @@ document.getElementById('menu-select-mode').addEventListener('click', () => {
   document.getElementById('sidebar-menu-dropdown').style.display = 'none';
   enterSelectionMode();
 });
+// 정렬 메뉴
+document.getElementById('menu-sort-datetime').addEventListener('click', () => {
+  currentSort = 'datetime';
+  document.getElementById('sidebar-menu-dropdown').style.display = 'none';
+  document.getElementById('menu-sort-datetime').classList.add('active-sort');
+  document.getElementById('menu-sort-created').classList.remove('active-sort');
+  renderTodoList();
+});
+document.getElementById('menu-sort-created').addEventListener('click', () => {
+  currentSort = 'created';
+  document.getElementById('sidebar-menu-dropdown').style.display = 'none';
+  document.getElementById('menu-sort-datetime').classList.remove('active-sort');
+  document.getElementById('menu-sort-created').classList.add('active-sort');
+  renderTodoList();
+});
+
+// 시간 미정 토글 (등록 모달)
+document.getElementById('time-undecided-btn').addEventListener('click', () => {
+  isTimeUndecided = !isTimeUndecided;
+  const timeEl  = document.getElementById('todo-time-input');
+  const timeBtn = document.getElementById('time-undecided-btn');
+  timeBtn.classList.toggle('active', isTimeUndecided);
+  timeEl.disabled = isTimeUndecided;
+  if (isTimeUndecided) timeEl.value = '';
+});
+document.getElementById('todo-time-input').addEventListener('input', () => {
+  if (isTimeUndecided) {
+    isTimeUndecided = false;
+    document.getElementById('time-undecided-btn').classList.remove('active');
+  }
+});
+
 document.getElementById('menu-delete-all').addEventListener('click', () => {
   document.getElementById('sidebar-menu-dropdown').style.display = 'none';
   deleteAllVisible();

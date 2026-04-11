@@ -99,6 +99,9 @@
               <div class="sidebar-menu-dropdown" id="sidebar-menu-dropdown" style="display:none;">
                 <button class="sidebar-menu-item" id="menu-select-mode">선택하기</button>
                 <div class="sidebar-menu-divider"></div>
+                <button class="sidebar-menu-item sort-item active-sort" id="menu-sort-datetime">⇅ 날짜+시간순</button>
+                <button class="sidebar-menu-item sort-item" id="menu-sort-created">⇅ 등록순</button>
+                <div class="sidebar-menu-divider"></div>
                 <button class="sidebar-menu-item danger" id="menu-delete-all">전체 삭제</button>
               </div>
             </div>
@@ -149,6 +152,13 @@
         <div class="form-group">
           <label for="todo-date-input">시작 날짜</label>
           <input type="date" id="todo-date-input" class="modal-date-input" />
+        </div>
+        <div class="form-group">
+          <label>시간 <span style="color:#aaa;font-weight:400;">(선택)</span></label>
+          <div class="time-input-row">
+            <input type="time" id="todo-time-input" class="modal-time-input" />
+            <button type="button" id="time-undecided-btn" class="time-undecided-btn">시간 미정</button>
+          </div>
         </div>
         <div class="form-group">
           <div class="tag-label-row">
