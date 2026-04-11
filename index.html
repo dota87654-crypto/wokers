@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Daily Planner & 제휴 문의</title>
+  <title>Daily Planner</title>
   <link href='/style.css' rel='stylesheet'>
   <!-- Microsoft Clarity -->
   <script type="text/javascript">
@@ -29,7 +29,10 @@
     <section class="dashboard">
       <div class="dash-header">
         <h1 class="dash-title">Daily Planner</h1>
-        <span class="dash-date-text" id="dash-date"></span>
+        <div class="dash-header-right">
+          <span class="dash-date-text" id="dash-date"></span>
+          <button class="contact-fab" id="open-contact-btn">✉ 문의하기</button>
+        </div>
       </div>
 
       <!-- 날씨 -->
@@ -88,40 +91,51 @@
       </div>
     </section>
 
-    <!-- ===== 제휴 문의 폼 ===== -->
-    <div class="container">
-      <h1>제휴 문의</h1>
-      <p class="subtitle">아래 양식을 작성해 주시면 빠르게 연락드리겠습니다.</p>
+    <!-- ===== 제휴 문의 모달 ===== -->
+    <div class="modal-overlay" id="contact-modal" aria-hidden="true">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <button class="modal-close" id="close-contact-btn" aria-label="닫기">✕</button>
+        <h2 class="modal-title" id="modal-title">제휴 문의</h2>
+        <p class="modal-subtitle">아래 양식을 작성해 주시면 빠르게 연락드리겠습니다.</p>
 
-      <form action="https://formspree.io/f/xjgpqyyw" method="POST" class="contact-form">
-        <div class="form-group">
-          <label for="name">이름 / 회사명</label>
-          <input type="text" id="name" name="name" placeholder="홍길동 / (주)회사명" required />
+        <!-- 전송 완료 메시지 -->
+        <div class="modal-success" id="modal-success" style="display:none;">
+          <div class="success-icon">✓</div>
+          <div class="success-title">문의가 접수되었습니다!</div>
+          <div class="success-desc">빠른 시일 내로 회신 드리겠습니다.</div>
+          <button class="submit-btn" id="success-close-btn" style="margin-top:20px;">닫기</button>
         </div>
-        <div class="form-group">
-          <label for="email">이메일</label>
-          <input type="email" id="email" name="email" placeholder="example@email.com" required />
-        </div>
-        <div class="form-group">
-          <label for="phone">연락처</label>
-          <input type="tel" id="phone" name="phone" placeholder="010-0000-0000" />
-        </div>
-        <div class="form-group">
-          <label for="type">문의 유형</label>
-          <select id="type" name="type" required>
-            <option value="" disabled selected>선택해 주세요</option>
-            <option value="광고/마케팅">광고 / 마케팅</option>
-            <option value="콘텐츠 제휴">콘텐츠 제휴</option>
-            <option value="기술 협력">기술 협력</option>
-            <option value="기타">기타</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="message">문의 내용</label>
-          <textarea id="message" name="message" rows="5" placeholder="문의 내용을 입력해 주세요." required></textarea>
-        </div>
-        <button type="submit" class="submit-btn">문의 보내기</button>
-      </form>
+
+        <form id="contact-form" class="contact-form">
+          <div class="form-group">
+            <label for="c-name">이름 / 회사명</label>
+            <input type="text" id="c-name" name="name" placeholder="홍길동 / (주)회사명" required />
+          </div>
+          <div class="form-group">
+            <label for="c-email">이메일</label>
+            <input type="email" id="c-email" name="email" placeholder="example@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="c-phone">연락처</label>
+            <input type="tel" id="c-phone" name="phone" placeholder="010-0000-0000" />
+          </div>
+          <div class="form-group">
+            <label for="c-type">문의 유형</label>
+            <select id="c-type" name="type" required>
+              <option value="" disabled selected>선택해 주세요</option>
+              <option value="광고/마케팅">광고 / 마케팅</option>
+              <option value="콘텐츠 제휴">콘텐츠 제휴</option>
+              <option value="기술 협력">기술 협력</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="c-message">문의 내용</label>
+            <textarea id="c-message" name="message" rows="4" placeholder="문의 내용을 입력해 주세요." required></textarea>
+          </div>
+          <button type="submit" class="submit-btn" id="contact-submit-btn">문의 보내기</button>
+        </form>
+      </div>
     </div>
 
     <!-- ===== 댓글 ===== -->

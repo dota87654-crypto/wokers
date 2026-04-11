@@ -385,3 +385,74 @@ document.getElementById('todo-date-input').value = toDateStr(new Date());
 initCalendar();
 renderTodoList();
 renderIncompletePanel();
+
+// ===================================================
+//  문의 모달
+// ===================================================
+const modal       = document.getElementById('contact-modal');
+const openBtn     = document.getElementById('open-contact-btn');
+const closeBtn    = document.getElementById('close-contact-btn');
+const contactForm = document.getElementById('contact-form');
+const successBox  = document.getElementById('modal-success');
+const submitBtn   = document.getElementById('contact-submit-btn');
+const successClose = document.getElementById('success-close-btn');
+
+function openModal() {
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+openBtn.addEventListener('click', openModal);
+closeBtn.addEventListener('click', closeModal);
+successClose.addEventListener('click', closeModal);
+
+// 배경(overlay) 클릭 시 닫기
+modal.addEventListener('click', (e) => {
+  if (e.target === modal) closeModal();
+});
+
+// ESC 키로 닫기
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modal.classList.contains('active')) closeModal();
+});
+
+// Formspree AJAX 전송 (페이지 이동 없이 성공 메시지 표시)
+contactForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  submitBtn.disabled = true;
+  submitBtn.textContent = '전송 중...';
+
+  try {
+    const res = await fetch('https://formspree.io/f/xjgpqyyw', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: new FormData(contactForm),
+    });
+
+    if (res.ok) {
+      contactForm.style.display = 'none';
+      successBox.style.display  = 'block';
+      contactForm.reset();
+    } else {
+      alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    }
+  } catch {
+    alert('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '문의 보내기';
+  }
+});
+
+// 모달 닫을 때 폼 상태 초기화
+function closeModal() {
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+  // 성공 화면이 떠 있었으면 폼 복원
+  if (successBox.style.display === 'block') {
+    successBox.style.display  = 'none';
+    contactForm.style.display = 'block';
+  }
+}

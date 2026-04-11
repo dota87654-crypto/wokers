@@ -33,6 +33,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+  gap: 12px;
 }
 
 .dash-title {
@@ -41,10 +42,36 @@ body {
   color: #1a1a2e;
 }
 
+.dash-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
 .dash-date-text {
   font-size: 0.95rem;
   color: #777;
   font-weight: 500;
+}
+
+.contact-fab {
+  padding: 9px 18px;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.contact-fab:hover {
+  background: #4f8ef7;
+  transform: translateY(-1px);
 }
 
 /* ---- Weather ---- */
@@ -489,79 +516,161 @@ body {
 .edit-cancel-btn:hover { background: #e0e0e0; }
 
 /* ===================================================
-   CONTACT FORM (기존 유지)
+   CONTACT MODAL
 =================================================== */
-.container {
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-box {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 48px 40px;
+  border-radius: 16px;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.18);
+  padding: 40px 36px;
   width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
+  max-width: 480px;
+  position: relative;
+  transform: translateY(24px) scale(0.97);
+  transition: transform 0.25s ease;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-h1 {
-  font-size: 1.8rem;
+.modal-overlay.active .modal-box {
+  transform: translateY(0) scale(1);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.modal-close:hover { background: #e74c3c; color: #fff; }
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 6px;
+}
+
+.modal-subtitle {
+  color: #888;
+  font-size: 0.88rem;
+  margin-bottom: 28px;
+}
+
+/* 전송 성공 */
+.modal-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  background: #4f8ef7;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.success-title {
+  font-size: 1.1rem;
   font-weight: 700;
-  margin-bottom: 8px;
+  color: #1a1a2e;
+  margin-bottom: 6px;
 }
 
-.subtitle {
-  color: #666;
-  font-size: 0.95rem;
-  margin-bottom: 32px;
+.success-desc {
+  font-size: 0.9rem;
+  color: #888;
 }
 
-.form-group { margin-bottom: 20px; }
+/* Form elements */
+.form-group { margin-bottom: 18px; }
 
 label {
   display: block;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   margin-bottom: 6px;
   color: #444;
 }
 
-input,
-select,
-textarea {
+.contact-form input,
+.contact-form select,
+.contact-form textarea {
   width: 100%;
-  padding: 12px 14px;
+  padding: 11px 13px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-family: inherit;
   color: #333;
   transition: border-color 0.2s;
   background: #fafafa;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+.contact-form input:focus,
+.contact-form select:focus,
+.contact-form textarea:focus {
   outline: none;
   border-color: #4f8ef7;
   background: #fff;
 }
 
-textarea { resize: vertical; }
+.contact-form textarea { resize: vertical; }
 
 .submit-btn {
   width: 100%;
-  padding: 14px;
+  padding: 13px;
   background: #4f8ef7;
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
-  margin-top: 8px;
+  margin-top: 6px;
   transition: background 0.2s;
 }
 
 .submit-btn:hover { background: #3a7be0; }
+.submit-btn:disabled { background: #a0b8e8; cursor: not-allowed; }
 
 /* ===================================================
    COMMENTS
@@ -593,8 +702,9 @@ textarea { resize: vertical; }
 
 @media (max-width: 480px) {
   body { padding: 16px 12px 60px; }
-  .container { padding: 32px 20px; }
+  .modal-box { padding: 28px 20px; }
   .todo-form-row { flex-wrap: wrap; }
   .todo-date-input { width: 100%; }
   .todo-add-btn { width: 100%; }
+  .dash-date-text { display: none; }
 }
