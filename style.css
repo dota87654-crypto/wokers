@@ -672,22 +672,6 @@ label {
 .submit-btn:hover { background: #3a7be0; }
 .submit-btn:disabled { background: #a0b8e8; cursor: not-allowed; }
 
-/* ===================================================
-   COMMENTS
-=================================================== */
-.comments-section {
-  width: 100%;
-  max-width: 520px;
-  margin: 32px auto 40px;
-  padding: 0 16px;
-}
-
-.comments-section h2 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #333;
-}
 
 /* ===================================================
    RESPONSIVE
