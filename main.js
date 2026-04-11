@@ -7,6 +7,10 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 let cachedTodos = [];
+let isGuest     = false;
+
+const GUEST_TODOS_KEY = 'guest_todos_v1';
+const GUEST_TAGS_KEY  = 'guest_tags_v1';
 
 // ===================================================
 //  AUTH
@@ -18,6 +22,7 @@ async function initAuth() {
 }
 
 function handleSession(session) {
+  if (isGuest) return;  // guest mode takes precedence
   currentUser = session?.user ?? null;
   if (currentUser) {
     showUserInfo();
@@ -33,6 +38,29 @@ function handleSession(session) {
     renderIncompletePanel();
     renderCalendar();
   }
+}
+
+function enterGuestMode() {
+  isGuest = true;
+  currentUser = null;
+  hideLoginOverlay();
+  hideUserInfo();
+  hideStreakBadge();
+  document.getElementById('guest-badge').style.display = 'flex';
+  cachedTodos = JSON.parse(localStorage.getItem(GUEST_TODOS_KEY) || '[]');
+  cachedTags  = JSON.parse(localStorage.getItem(GUEST_TAGS_KEY)  || '[]');
+  renderTagFilter();
+  renderTodoList();
+  renderIncompletePanel();
+  renderCalendar();
+}
+
+function exitGuestMode() {
+  isGuest = false;
+  cachedTodos = [];
+  cachedTags  = [];
+  document.getElementById('guest-badge').style.display = 'none';
+  showLoginOverlay();
 }
 
 function showUserInfo() {
@@ -62,6 +90,8 @@ async function signOut() { await db.auth.signOut(); }
 
 document.getElementById('google-login-btn').addEventListener('click', signInWithGoogle);
 document.getElementById('logout-btn').addEventListener('click', signOut);
+document.getElementById('guest-btn').addEventListener('click', enterGuestMode);
+document.getElementById('guest-login-btn').addEventListener('click', exitGuestMode);
 
 // ===================================================
 //  출석 & 연속 출석 스트릭
@@ -331,6 +361,11 @@ planModal.addEventListener('click', e => { if (e.target === planModal) closePlan
 //  TODO — Supabase CRUD
 // ===================================================
 async function fetchTodos() {
+  if (isGuest) {
+    cachedTodos = JSON.parse(localStorage.getItem(GUEST_TODOS_KEY) || '[]');
+    renderTodoList(); renderIncompletePanel(); renderCalendar();
+    return;
+  }
   const { data, error } = await db.from('todos').select('*').order('created_at', { ascending: true });
   if (!error) {
     cachedTodos = data;
@@ -453,7 +488,7 @@ function renderTodoList() {
 
 // ---- CRUD ----
 async function handleAddTodo() {
-  if (!currentUser) return false;
+  if (!currentUser && !isGuest) return false;
   const headlineEl = document.getElementById('todo-headline');
   const textEl     = document.getElementById('todo-text');
   const dateEl     = document.getElementById('todo-date-input');
@@ -478,40 +513,56 @@ async function handleAddTodo() {
     addBtn.disabled = true;
     addBtn.textContent = `${dates.length}개 등록 중...`;
 
-    const todoArray = dates.map(date => ({
-      user_id: currentUser.id,
-      headline,
-      text: textEl.value.trim(),
-      date,
-      completed: false,
-      tag_id: selectedTagId || null,
-    }));
-
-    // Supabase는 한 번에 최대 1000행 삽입 가능 — 500개로 제한했으므로 안전
-    const { data, error } = await db.from('todos').insert(todoArray).select();
+    if (isGuest) {
+      const newItems = dates.map(date => ({
+        id: 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+        headline, text: textEl.value.trim(), date, completed: false,
+        tag_id: selectedTagId || null, created_at: new Date().toISOString(),
+      }));
+      cachedTodos.push(...newItems);
+      localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
+    } else {
+      const todoArray = dates.map(date => ({
+        user_id: currentUser.id,
+        headline,
+        text: textEl.value.trim(),
+        date,
+        completed: false,
+        tag_id: selectedTagId || null,
+      }));
+      // Supabase는 한 번에 최대 1000행 삽입 가능 — 500개로 제한했으므로 안전
+      const { data, error } = await db.from('todos').insert(todoArray).select();
+      if (!error) { cachedTodos.push(...data); }
+    }
 
     addBtn.disabled = false;
     addBtn.textContent = '추가하기';
 
-    if (!error) {
-      cachedTodos.push(...data);
-    }
-
   } else {
     // ---- 단일 계획 ----
-    const tempId  = 'temp-' + Date.now();
-    const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
-    cachedTodos.push(newItem);
-
-    const { data, error } = await db.from('todos')
-      .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false, tag_id: newItem.tag_id }])
-      .select().single();
-
-    if (!error) {
-      const idx = cachedTodos.findIndex(t => t.id === tempId);
-      if (idx !== -1) cachedTodos[idx] = data;
+    if (isGuest) {
+      const newItem = {
+        id: 'guest-' + Date.now(),
+        headline, text: textEl.value.trim(), date: dateEl.value || null,
+        completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString(),
+      };
+      cachedTodos.push(newItem);
+      localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
-      cachedTodos = cachedTodos.filter(t => t.id !== tempId);
+      const tempId  = 'temp-' + Date.now();
+      const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
+      cachedTodos.push(newItem);
+
+      const { data, error } = await db.from('todos')
+        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, completed: false, tag_id: newItem.tag_id }])
+        .select().single();
+
+      if (!error) {
+        const idx = cachedTodos.findIndex(t => t.id === tempId);
+        if (idx !== -1) cachedTodos[idx] = data;
+      } else {
+        cachedTodos = cachedTodos.filter(t => t.id !== tempId);
+      }
     }
   }
 
@@ -526,6 +577,7 @@ async function toggleTodo(id) {
   if (!todo) return;
   todo.completed = !todo.completed;
   renderTodoList(); renderIncompletePanel(); renderCalendar();
+  if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   await db.from('todos').update({ completed: todo.completed }).eq('id', id);
 }
 
@@ -533,6 +585,7 @@ async function deleteTodo(id) {
   cachedTodos = cachedTodos.filter(t => t.id !== id);
   if (editingId === id) editingId = null;
   renderTodoList(); renderIncompletePanel(); renderCalendar();
+  if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   await db.from('todos').delete().eq('id', id);
 }
 
@@ -542,6 +595,7 @@ async function editTodo(id, headline, text, date, tagId) {
   todo.headline = headline; todo.text = text; todo.date = date || null; todo.tag_id = tagId || null;
   editingId = null;
   renderTodoList(); renderCalendar();
+  if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null }).eq('id', id);
 }
 
@@ -567,6 +621,10 @@ function getTag(tagId) {
 }
 
 async function fetchTags() {
+  if (isGuest) {
+    cachedTags = JSON.parse(localStorage.getItem(GUEST_TAGS_KEY) || '[]');
+    return;
+  }
   const { data } = await db.from('tags').select('*').order('created_at', { ascending: true });
   if (data) cachedTags = data;
 }
@@ -686,6 +744,17 @@ async function createTag() {
   const name = nameInput.value.trim();
   if (!name) { nameInput.focus(); return; }
 
+  if (isGuest) {
+    const newTag = { id: 'guest-tag-' + Date.now(), name, color: tagColorPick, created_at: new Date().toISOString() };
+    cachedTags.push(newTag);
+    localStorage.setItem(GUEST_TAGS_KEY, JSON.stringify(cachedTags));
+    nameInput.value = '';
+    renderTagManageList();
+    renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+    renderTagFilter();
+    return;
+  }
+
   const { data, error } = await db.from('tags')
     .insert([{ user_id: currentUser.id, name, color: tagColorPick }])
     .select().single();
@@ -700,6 +769,18 @@ async function createTag() {
 }
 
 async function deleteTag(id) {
+  if (isGuest) {
+    cachedTags = cachedTags.filter(t => t.id !== id);
+    localStorage.setItem(GUEST_TAGS_KEY, JSON.stringify(cachedTags));
+    if (selectedTagId === id) selectedTagId = null;
+    if (filterTagId === id)   filterTagId   = null;
+    renderTagManageList();
+    renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+    renderTagFilter();
+    renderTodoList();
+    renderCalendar();
+    return;
+  }
   const { error } = await db.from('tags').delete().eq('id', id);
   if (!error) {
     cachedTags = cachedTags.filter(t => t.id !== id);
