@@ -1588,6 +1588,64 @@ label {
 }
 
 /* ===================================================
+   PRIORITY
+=================================================== */
+.priority-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.priority-btn {
+  width: 38px;
+  height: 34px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #f0f2f5;
+  color: #777;
+}
+.priority-btn:hover { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
+
+.priority-btn.p1 { background: #fde8e8; color: #c0392b; border-color: #e8a09a; }
+.priority-btn.p2 { background: #fef0e6; color: #d35400; border-color: #f0b87a; }
+.priority-btn.p3 { background: #fef9e7; color: #9a7d0a; border-color: #f4d03f; }
+.priority-btn.p4 { background: #e8f8f0; color: #1a7a4a; border-color: #82d9a9; }
+.priority-btn.p5 { background: #f4f6f7; color: #626567; border-color: #b2bec3; }
+.priority-btn.pund { width: auto; padding: 0 12px; background: #f4f4f4; color: #999; border-color: #ddd; }
+
+.priority-btn.selected {
+  color: #fff !important;
+  transform: scale(1.08) translateY(-1px);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+.priority-btn.p1.selected { background: #e74c3c; border-color: #e74c3c; }
+.priority-btn.p2.selected { background: #e67e22; border-color: #e67e22; }
+.priority-btn.p3.selected { background: #f1c40f; border-color: #f1c40f; color: #333 !important; }
+.priority-btn.p4.selected { background: #2ecc71; border-color: #2ecc71; }
+.priority-btn.p5.selected { background: #95a5a6; border-color: #95a5a6; }
+.priority-btn.pund.selected { background: #aaa; border-color: #aaa; color: #fff !important; }
+
+/* 계획 목록 배지 */
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* ===================================================
    GUEST MODE
 =================================================== */
 .login-divider {

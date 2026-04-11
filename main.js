@@ -580,6 +580,16 @@ let editingId        = null;
 let selectionMode    = false;
 let selectedIds      = new Set();
 let isTimeUndecided  = false;
+let selectedPriority = null; // null | 0(미정) | 1-5
+
+const PRIORITY_CFG = {
+  1: { bg: '#e74c3c', text: '#fff',  label: 'P1' },
+  2: { bg: '#e67e22', text: '#fff',  label: 'P2' },
+  3: { bg: '#f1c40f', text: '#333',  label: 'P3' },
+  4: { bg: '#2ecc71', text: '#fff',  label: 'P4' },
+  5: { bg: '#95a5a6', text: '#fff',  label: 'P5' },
+  0: { bg: '#d0d0d0', text: '#777',  label: '미정' },
+};
 
 function escapeHtml(str) {
   return String(str)
@@ -618,6 +628,7 @@ function getFilteredTodos() {
 function renderTodoList() {
   const listEl = document.getElementById('todo-list');
   let todos = getFilteredTodos();
+  const prioVal = t => (t.priority === null || t.priority === undefined) ? 999 : t.priority === 0 ? 998 : t.priority;
   if (currentSort === 'datetime') {
     const tval = t => (t.time && t.time !== '미정') ? t.time : 'zz:zz';
     todos.sort((a, b) => {
@@ -625,6 +636,13 @@ function renderTodoList() {
       const dc = (a.date || '9999').localeCompare(b.date || '9999');
       if (dc !== 0) return dc;
       return tval(a).localeCompare(tval(b));
+    });
+  } else if (currentSort === 'priority') {
+    todos.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      const pc = prioVal(a) - prioVal(b);
+      if (pc !== 0) return pc;
+      return (a.date || '9999').localeCompare(b.date || '9999');
     });
   } else {
     todos.sort((a, b) => {
@@ -674,6 +692,9 @@ function renderTodoList() {
               <input type="time" class="edit-time-input modal-time-input" value="${editTimeVal}" ${editUndecided ? 'disabled' : ''} />
               <button type="button" class="time-undecided-btn edit-time-undecided-btn${editUndecided ? ' active' : ''}">시간 미정</button>
             </div>
+            <div class="priority-row edit-priority-row" data-selected="${todo.priority ?? ''}">
+              ${priorityRowHtml(todo.priority ?? null)}
+            </div>
             <div class="tag-selector" id="edit-tag-selector-${todo.id}" data-selected="${todo.tag_id || ''}"></div>
             <div class="edit-actions">
               <button class="edit-save-btn" data-id="${todo.id}">저장</button>
@@ -689,6 +710,7 @@ function renderTodoList() {
         <button class="todo-check-btn" data-id="${todo.id}">${todo.completed ? '✓' : '○'}</button>
         <div class="todo-item-content">
           <div class="todo-item-top">
+            ${getPriorityBadge(todo.priority)}
             <span class="todo-item-headline">${title}</span>
             ${tagHtml}
           </div>
@@ -747,7 +769,10 @@ function renderTodoList() {
       const timeUndBtn   = item.querySelector('.edit-time-undecided-btn');
       const timeInput    = item.querySelector('.edit-time-input');
       const time         = timeUndBtn?.classList.contains('active') ? '미정' : (timeInput?.value || null);
-      if (headline) editTodo(btn.dataset.id, headline, text, date, tagId, time);
+      const prioRow      = item.querySelector('.edit-priority-row');
+      const prioVal      = prioRow?.dataset.selected;
+      const priority     = (prioVal !== '' && prioVal !== undefined) ? parseInt(prioVal) : null;
+      if (headline) editTodo(btn.dataset.id, headline, text, date, tagId, time, priority);
     }));
   listEl.querySelectorAll('.edit-cancel-btn').forEach(btn =>
     btn.addEventListener('click', () => { editingId = null; renderTodoList(); }));
@@ -765,6 +790,36 @@ function renderTodoList() {
       if (isActive) ti.value = '';
     });
   });
+  // 수정 폼 우선순위 토글
+  listEl.querySelectorAll('.edit-priority-row').forEach(row => {
+    row.querySelectorAll('.priority-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p     = btn.dataset.p;
+        const isSel = btn.classList.contains('selected');
+        row.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
+        if (!isSel) { btn.classList.add('selected'); row.dataset.selected = p; }
+        else          row.dataset.selected = '';
+      });
+    });
+  });
+}
+
+// ---- 우선순위 배지 ----
+function getPriorityBadge(priority) {
+  if (priority === null || priority === undefined) return '';
+  const cfg = PRIORITY_CFG[priority];
+  if (!cfg) return '';
+  return `<span class="priority-badge" style="background:${cfg.bg};color:${cfg.text};">${cfg.label}</span>`;
+}
+
+// ---- 우선순위 버튼 HTML (수정 폼용) ----
+function priorityRowHtml(current) {
+  return [1,2,3,4,5,0].map(p => {
+    const cfg = PRIORITY_CFG[p];
+    const sel = current === p ? ' selected' : '';
+    const cls = p === 0 ? 'pund' : `p${p}`;
+    return `<button type="button" class="priority-btn ${cls}${sel}" data-p="${p}">${p === 0 ? '미정' : p}</button>`;
+  }).join('');
 }
 
 // ---- 날짜+시간 배지 렌더링 ----
@@ -786,8 +841,9 @@ async function handleAddTodo() {
   const headline   = headlineEl.value.trim();
   if (!headline) { headlineEl.focus(); return false; }
 
-  const todoTime = isTimeUndecided ? '미정' : (timeEl?.value || null);
-  const isRepeat = document.getElementById('repeat-toggle').checked;
+  const todoTime     = isTimeUndecided ? '미정' : (timeEl?.value || null);
+  const todoPriority = selectedPriority ?? null;
+  const isRepeat     = document.getElementById('repeat-toggle').checked;
   const addBtn   = document.getElementById('todo-add-btn');
 
   if (isRepeat) {
@@ -808,7 +864,8 @@ async function handleAddTodo() {
     if (isGuest) {
       const newItems = dates.map(date => ({
         id: 'guest-' + Date.now() + '-' + Math.random().toString(36).slice(2),
-        headline, text: textEl.value.trim(), date, time: todoTime, completed: false,
+        headline, text: textEl.value.trim(), date, time: todoTime,
+        priority: todoPriority, completed: false,
         tag_id: selectedTagId || null, created_at: new Date().toISOString(),
       }));
       cachedTodos.push(...newItems);
@@ -816,7 +873,7 @@ async function handleAddTodo() {
     } else {
       const todoArray = dates.map(date => ({
         user_id: currentUser.id, headline, text: textEl.value.trim(),
-        date, time: todoTime, completed: false, tag_id: selectedTagId || null,
+        date, time: todoTime, priority: todoPriority, completed: false, tag_id: selectedTagId || null,
       }));
       const { data, error } = await db.from('todos').insert(todoArray).select();
       if (!error) { cachedTodos.push(...data); }
@@ -830,18 +887,19 @@ async function handleAddTodo() {
     if (isGuest) {
       const newItem = {
         id: 'guest-' + Date.now(),
-        headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime,
+        headline, text: textEl.value.trim(), date: dateEl.value || null,
+        time: todoTime, priority: todoPriority,
         completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString(),
       };
       cachedTodos.push(newItem);
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
       const tempId  = 'temp-' + Date.now();
-      const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
+      const newItem = { id: tempId, headline, text: textEl.value.trim(), date: dateEl.value || null, time: todoTime, priority: todoPriority, completed: false, tag_id: selectedTagId || null, created_at: new Date().toISOString() };
       cachedTodos.push(newItem);
 
       const { data, error } = await db.from('todos')
-        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, completed: false, tag_id: newItem.tag_id }])
+        .insert([{ user_id: currentUser.id, headline: newItem.headline, text: newItem.text, date: newItem.date, time: newItem.time, priority: newItem.priority, completed: false, tag_id: newItem.tag_id }])
         .select().single();
 
       if (!error) {
@@ -876,15 +934,16 @@ async function deleteTodo(id) {
   await db.from('todos').delete().eq('id', id);
 }
 
-async function editTodo(id, headline, text, date, tagId, time) {
+async function editTodo(id, headline, text, date, tagId, time, priority) {
   const todo = cachedTodos.find(t => t.id === id);
   if (!todo) return;
   todo.headline = headline; todo.text = text; todo.date = date || null;
   todo.tag_id = tagId || null; todo.time = time || null;
+  todo.priority = priority ?? null;
   editingId = null;
   renderTodoList(); renderCalendar();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
-  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null, time: time || null }).eq('id', id);
+  await db.from('todos').update({ headline, text, date: date || null, tag_id: tagId || null, time: time || null, priority: priority ?? null }).eq('id', id);
 }
 
 // ===================================================
@@ -1197,6 +1256,9 @@ function closePlanAddModal() {
   const timeBtn   = document.getElementById('time-undecided-btn');
   if (timeEl)  { timeEl.value = ''; timeEl.disabled = false; }
   if (timeBtn) timeBtn.classList.remove('active');
+  // 우선순위 초기화
+  selectedPriority = null;
+  document.querySelectorAll('#add-priority-row .priority-btn').forEach(b => b.classList.remove('selected'));
 }
 
 openPlanAddBtn.addEventListener('click', openPlanAddModal);
@@ -1288,19 +1350,28 @@ document.getElementById('menu-select-mode').addEventListener('click', () => {
   enterSelectionMode();
 });
 // 정렬 메뉴
-document.getElementById('menu-sort-datetime').addEventListener('click', () => {
-  currentSort = 'datetime';
+function setSortMode(mode) {
+  currentSort = mode;
   document.getElementById('sidebar-menu-dropdown').style.display = 'none';
-  document.getElementById('menu-sort-datetime').classList.add('active-sort');
-  document.getElementById('menu-sort-created').classList.remove('active-sort');
+  ['menu-sort-datetime','menu-sort-priority','menu-sort-created'].forEach(id => {
+    document.getElementById(id)?.classList.remove('active-sort');
+  });
+  document.getElementById(`menu-sort-${mode}`)?.classList.add('active-sort');
   renderTodoList();
-});
-document.getElementById('menu-sort-created').addEventListener('click', () => {
-  currentSort = 'created';
-  document.getElementById('sidebar-menu-dropdown').style.display = 'none';
-  document.getElementById('menu-sort-datetime').classList.remove('active-sort');
-  document.getElementById('menu-sort-created').classList.add('active-sort');
-  renderTodoList();
+}
+document.getElementById('menu-sort-datetime').addEventListener('click',  () => setSortMode('datetime'));
+document.getElementById('menu-sort-priority').addEventListener('click',  () => setSortMode('priority'));
+document.getElementById('menu-sort-created').addEventListener('click',   () => setSortMode('created'));
+
+// 등록 모달 우선순위 버튼
+document.getElementById('add-priority-row').querySelectorAll('.priority-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p     = parseInt(btn.dataset.p);
+    const isSel = btn.classList.contains('selected');
+    document.querySelectorAll('#add-priority-row .priority-btn').forEach(b => b.classList.remove('selected'));
+    if (!isSel) { btn.classList.add('selected'); selectedPriority = p; }
+    else          selectedPriority = null;
+  });
 });
 
 // 시간 미정 토글 (등록 모달)
