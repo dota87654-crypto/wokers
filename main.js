@@ -1499,6 +1499,7 @@ const WIDGET_LABELS = {
   'widget-plans':     '📋 계획 목록',
   'widget-memo':      '📝 메모장',
   'widget-pomodoro':  '🍅 뽀모도로',
+  'widget-clock':     '🕐 시계',
 };
 // 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
@@ -1507,6 +1508,7 @@ const WIDGET_DEFAULTS = {
   'widget-plans':     { top: 199, left: 542, width: 346, height: 620 },
   'widget-memo':      { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
   'widget-pomodoro':  { top: 199, left: 294, width: 300, height: 360, hiddenByDefault: true },
+  'widget-clock':     { top: 60,  left: 320, width: 280, height: 160, hiddenByDefault: true },
 };
 
 function saveWidgetLayout() {
@@ -2265,3 +2267,26 @@ function renderPomoTimer() {
 
 // 위젯이 보일 때마다 렌더링 (show 이벤트 대신 초기 렌더)
 renderPomoTimer();
+
+// ===================================================
+//  시계 위젯
+// ===================================================
+function renderClock() {
+  const el = document.getElementById('clock-display');
+  if (!el) return;
+
+  const now  = new Date();
+  const hh   = String(now.getHours()).padStart(2, '0');
+  const mm   = String(now.getMinutes()).padStart(2, '0');
+  const ss   = String(now.getSeconds()).padStart(2, '0');
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const dateStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. (${days[now.getDay()]})`;
+
+  el.innerHTML = `
+    <div class="clock-time">${hh}<span class="clock-colon">:</span>${mm}<span class="clock-colon">:</span>${ss}</div>
+    <div class="clock-date">${dateStr}</div>
+  `;
+}
+
+renderClock();
+setInterval(renderClock, 1000);
