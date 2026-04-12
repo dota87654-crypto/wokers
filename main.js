@@ -1486,3 +1486,217 @@ contactForm.addEventListener('submit', async (e) => {
 document.getElementById('todo-date-input').value = toDateStr(new Date());
 initCalendar();
 initAuth();
+
+// ===================================================
+//  WIDGET SYSTEM
+// ===================================================
+const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v1';
+
+const WIDGET_LABELS = {
+  'widget-weather':  '🌤 날씨',
+  'widget-calendar': '📅 달력',
+  'widget-plans':    '📋 계획 목록',
+};
+
+const WIDGET_DEFAULTS = {
+  'widget-weather':  { top: 0,   left: 0,   width: 780, height: 150 },
+  'widget-calendar': { top: 168, left: 0,   width: 460, height: 510 },
+  'widget-plans':    { top: 168, left: 480, width: 300, height: 510 },
+};
+
+function saveWidgetLayout() {
+  const layout = {};
+  document.querySelectorAll('.widget').forEach(w => {
+    layout[w.id] = {
+      top:    parseInt(w.style.top)    || 0,
+      left:   parseInt(w.style.left)   || 0,
+      width:  parseInt(w.style.width)  || 300,
+      height: parseInt(w.style.height) || 200,
+      hidden: w.classList.contains('widget-hidden'),
+    };
+  });
+  localStorage.setItem(WIDGET_LAYOUT_KEY, JSON.stringify(layout));
+}
+
+function loadWidgetLayout() {
+  try { return JSON.parse(localStorage.getItem(WIDGET_LAYOUT_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function applyWidgetLayout() {
+  // 모바일이면 적용 안 함
+  if (window.innerWidth <= 800) return;
+  const saved = loadWidgetLayout();
+  document.querySelectorAll('.widget').forEach(w => {
+    const def = WIDGET_DEFAULTS[w.id] || { top: 0, left: 0, width: 300, height: 200 };
+    const s   = saved[w.id] ? saved[w.id] : def;
+    w.style.top    = s.top    + 'px';
+    w.style.left   = s.left   + 'px';
+    w.style.width  = s.width  + 'px';
+    w.style.height = s.height + 'px';
+    if (s.hidden) w.classList.add('widget-hidden');
+  });
+  updateWidgetAreaHeight();
+  updateWidgetMgrDropdown();
+}
+
+function updateWidgetAreaHeight() {
+  if (window.innerWidth <= 800) return;
+  const area = document.getElementById('widget-area');
+  let maxBottom = 400;
+  document.querySelectorAll('.widget:not(.widget-hidden)').forEach(w => {
+    const bottom = (parseInt(w.style.top) || 0) + (parseInt(w.style.height) || 0);
+    if (bottom > maxBottom) maxBottom = bottom;
+  });
+  area.style.minHeight = (maxBottom + 40) + 'px';
+}
+
+function updateWidgetMgrDropdown() {
+  const dropdown = document.getElementById('widget-mgr-dropdown');
+  const hidden   = [...document.querySelectorAll('.widget.widget-hidden')];
+  if (!hidden.length) {
+    dropdown.innerHTML = '<div class="widget-mgr-empty">모든 위젯이 표시 중이에요</div>';
+    return;
+  }
+  dropdown.innerHTML = hidden.map(w =>
+    `<button class="widget-mgr-item" data-widget="${w.id}">${WIDGET_LABELS[w.id] || w.id} 추가</button>`
+  ).join('');
+  dropdown.querySelectorAll('.widget-mgr-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const widget = document.getElementById(btn.dataset.widget);
+      if (widget) {
+        widget.classList.remove('widget-hidden');
+        saveWidgetLayout();
+        updateWidgetMgrDropdown();
+        updateWidgetAreaHeight();
+      }
+      document.getElementById('widget-mgr-dropdown').style.display = 'none';
+    });
+  });
+}
+
+// 드래그
+function initWidgetDrag(widget) {
+  const header = widget.querySelector('.widget-header');
+
+  const startDrag = (clientX, clientY) => {
+    if (window.innerWidth <= 800) return;
+    document.querySelectorAll('.widget').forEach(w => { w.style.zIndex = '1'; });
+    widget.style.zIndex = '10';
+    header.classList.add('is-dragging');
+
+    const startX = clientX - widget.offsetLeft;
+    const startY = clientY - widget.offsetTop;
+
+    const onMove = e => {
+      widget.style.left = Math.max(0, e.clientX - startX) + 'px';
+      widget.style.top  = Math.max(0, e.clientY - startY) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+      header.classList.remove('is-dragging');
+      saveWidgetLayout();
+      updateWidgetAreaHeight();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  };
+
+  header.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('widget-close')) return;
+    e.preventDefault();
+    startDrag(e.clientX, e.clientY);
+  });
+
+  // 터치 지원
+  header.addEventListener('touchstart', e => {
+    if (e.target.classList.contains('widget-close')) return;
+    if (window.innerWidth <= 800) return;
+    const t = e.touches[0];
+    widget.style.zIndex = '10';
+    header.classList.add('is-dragging');
+    const startX = t.clientX - widget.offsetLeft;
+    const startY = t.clientY - widget.offsetTop;
+
+    const onMove = e => {
+      e.preventDefault();
+      const tc = e.touches[0];
+      widget.style.left = Math.max(0, tc.clientX - startX) + 'px';
+      widget.style.top  = Math.max(0, tc.clientY - startY) + 'px';
+    };
+    const onEnd = () => {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend',  onEnd);
+      header.classList.remove('is-dragging');
+      saveWidgetLayout();
+      updateWidgetAreaHeight();
+    };
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend',  onEnd);
+  }, { passive: true });
+}
+
+// 리사이즈
+function initWidgetResize(widget) {
+  const handle = widget.querySelector('.widget-resize-handle');
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (window.innerWidth <= 800) return;
+
+    widget.style.zIndex = '10';
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startW = widget.offsetWidth;
+    const startH = widget.offsetHeight;
+
+    const onMove = e => {
+      widget.style.width  = Math.max(220, startW + e.clientX - startX) + 'px';
+      widget.style.height = Math.max(80,  startH + e.clientY - startY) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+      saveWidgetLayout();
+      updateWidgetAreaHeight();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+// 닫기
+function initWidgetClose(widget) {
+  widget.querySelector('.widget-close').addEventListener('click', () => {
+    widget.classList.add('widget-hidden');
+    saveWidgetLayout();
+    updateWidgetMgrDropdown();
+    updateWidgetAreaHeight();
+  });
+}
+
+// 위젯 관리 버튼
+document.getElementById('widget-mgr-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd = document.getElementById('widget-mgr-dropdown');
+  const open = dd.style.display !== 'none';
+  dd.style.display = open ? 'none' : 'block';
+  if (!open) updateWidgetMgrDropdown();
+});
+
+// 외부 클릭 시 위젯 드롭다운 닫기
+document.addEventListener('click', e => {
+  if (!e.target.closest('.widget-mgr-wrap')) {
+    document.getElementById('widget-mgr-dropdown').style.display = 'none';
+  }
+});
+
+// 모든 위젯 초기화
+document.querySelectorAll('.widget').forEach(widget => {
+  initWidgetDrag(widget);
+  initWidgetResize(widget);
+  initWidgetClose(widget);
+});
+
+applyWidgetLayout();
