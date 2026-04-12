@@ -1913,3 +1913,40 @@ label {
   .widget-body { overflow: visible; border-radius: 16px; }
   .widget-edit-btn, .widget-add-btn { display: none !important; }
 }
+
+/* ===================================================
+   WEATHER WIDGET RESPONSIVE MODES
+=================================================== */
+
+/* compact: 주간 예보 숨김 */
+#widget-weather.wt-compact .weather-weekly { display: none; }
+#widget-weather.wt-compact .dash-weather   { padding: 14px 20px; gap: 6px; }
+
+/* mini: 주간 예보 + 날씨 설명 숨김, 아이콘/글씨 축소 */
+#widget-weather.wt-mini .weather-weekly   { display: none; }
+#widget-weather.wt-mini .weather-desc     { display: none; }
+#widget-weather.wt-mini .weather-wind     { display: none; }
+#widget-weather.wt-mini .weather-fav-row  { display: none; }
+#widget-weather.wt-mini .weather-search-row { display: none; }
+#widget-weather.wt-mini .dash-weather     { padding: 10px 14px; gap: 4px; }
+#widget-weather.wt-mini .weather-icon     { font-size: 2.2rem; }
+#widget-weather.wt-mini .weather-temp     { font-size: 1.7rem; }
+#widget-weather.wt-mini .weather-city     { font-size: 0.78rem; }
+#widget-weather.wt-mini .weather-current  { gap: 10px; }
+#widget-weather.wt-mini .weather-top      { gap: 0; }
+
+/* tiny: 아이콘 + 온도 + 도시명만 가로로 */
+#widget-weather.wt-tiny .weather-weekly      { display: none; }
+#widget-weather.wt-tiny .weather-desc        { display: none; }
+#widget-weather.wt-tiny .weather-wind        { display: none; }
+#widget-weather.wt-tiny .weather-fav-row     { display: none; }
+#widget-weather.wt-tiny .weather-search-row  { display: none; }
+#widget-weather.wt-tiny .weather-search-toggle { display: none; }
+#widget-weather.wt-tiny .weather-fav-toggle  { display: none; }
+#widget-weather.wt-tiny .dash-weather        { padding: 8px 12px; gap: 0; flex-direction: row; align-items: center; }
+#widget-weather.wt-tiny .weather-top         { gap: 10px; align-items: center; }
+#widget-weather.wt-tiny .weather-current     { gap: 8px; flex-direction: row; align-items: center; }
+#widget-weather.wt-tiny .weather-icon        { font-size: 1.6rem; }
+#widget-weather.wt-tiny .weather-temp        { font-size: 1.3rem; }
+#widget-weather.wt-tiny .weather-city        { font-size: 0.72rem; }
+#widget-weather.wt-tiny .weather-city-row    { margin-bottom: 0; }

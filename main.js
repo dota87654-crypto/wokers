@@ -1620,7 +1620,7 @@ function initWidgetDrag(widget) {
     const startX = e.clientX - widget.offsetLeft;
     const startY = e.clientY - widget.offsetTop;
     const onMove = e => {
-      widget.style.left = Math.max(0, e.clientX - startX) + 'px';
+      widget.style.left = (e.clientX - startX) + 'px';
       widget.style.top  = Math.max(0, e.clientY - startY) + 'px';
     };
     const onUp = () => {
@@ -1645,7 +1645,7 @@ function initWidgetDrag(widget) {
     const onMove = e => {
       e.preventDefault();
       const tc = e.touches[0];
-      widget.style.left = Math.max(0, tc.clientX - startX) + 'px';
+      widget.style.left = (tc.clientX - startX) + 'px';
       widget.style.top  = Math.max(0, tc.clientY - startY) + 'px';
     };
     const onEnd = () => {
@@ -1703,3 +1703,18 @@ document.querySelectorAll('.widget').forEach(widget => {
 });
 
 applyWidgetLayout();
+
+// 날씨 위젯 반응형 (크기에 따라 compact/mini/tiny 모드)
+(function initWeatherResize() {
+  const w = document.getElementById('widget-weather');
+  if (!w || !window.ResizeObserver) return;
+  new ResizeObserver(entries => {
+    const { width: ww, height: wh } = entries[0].contentRect;
+    const tiny    = ww < 210 || wh < 82;
+    const mini    = !tiny    && (ww < 340 || wh < 108);
+    const compact = !mini    && !tiny && (ww < 520 || wh < 148);
+    w.classList.toggle('wt-tiny',    tiny);
+    w.classList.toggle('wt-mini',    mini);
+    w.classList.toggle('wt-compact', compact);
+  }).observe(w);
+})();
