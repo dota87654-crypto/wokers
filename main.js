@@ -2057,6 +2057,7 @@ let pomoState = (() => {
     focusMins: 25,
     breakMins: 5,
     longBreakMins: 15,
+    muted: false,
   };
 })();
 // 페이지 로드 시 실행 중이었던 상태는 중단으로 초기화
@@ -2066,6 +2067,29 @@ let pomoInterval = null;
 
 function pomoSave() {
   localStorage.setItem(POMO_KEY, JSON.stringify(pomoState));
+}
+
+function pomoPlayAlarm() {
+  if (pomoState.muted) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const beep = (t, freq, dur) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.35, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.start(t);
+      osc.stop(t + dur);
+    };
+    const now = ctx.currentTime;
+    beep(now,        880, 0.25);
+    beep(now + 0.32, 880, 0.25);
+    beep(now + 0.64, 1100, 0.5);
+  } catch (e) {}
 }
 
 function pomoTotalSecs() {
@@ -2105,6 +2129,7 @@ function pomoFinish() {
 
   pomoSave();
   renderPomoTimer();
+  pomoPlayAlarm();
 
   // 브라우저 알림 (권한 있을 때만)
   if (Notification?.permission === 'granted') {
@@ -2191,6 +2216,10 @@ function renderPomoTimer() {
             style="background:${modeColor}">▶ 시작</button>`}
       <button class="pomo-btn pomo-btn-sub" id="pomo-skip-btn" title="다음 단계로">⏭</button>
       <button class="pomo-btn pomo-btn-sub" id="pomo-reset-btn" title="초기화">↺</button>
+      <button class="pomo-btn pomo-btn-sub pomo-mute-btn${pomoState.muted ? ' muted' : ''}"
+        id="pomo-mute-btn" title="${pomoState.muted ? '알람 켜기' : '알람 끄기'}">
+        ${pomoState.muted ? '🔇' : '🔔'}
+      </button>
     </div>
     <div class="pomo-settings">
       <label>집중 <input class="pomo-mins-input" id="pomo-focus-input" type="number" min="1" max="60" value="${pomoState.focusMins}">분</label>
@@ -2202,6 +2231,11 @@ function renderPomoTimer() {
   el.querySelector('#pomo-pause-btn')?.addEventListener('click', pomoPause);
   el.querySelector('#pomo-skip-btn')?.addEventListener('click', pomoSkip);
   el.querySelector('#pomo-reset-btn')?.addEventListener('click', pomoReset);
+  el.querySelector('#pomo-mute-btn')?.addEventListener('click', () => {
+    pomoState.muted = !pomoState.muted;
+    pomoSave();
+    renderPomoTimer();
+  });
   el.querySelector('#pomo-focus-input')?.addEventListener('change', function() {
     const v = Math.max(1, Math.min(60, parseInt(this.value) || 25));
     pomoState.focusMins = v;

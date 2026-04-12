@@ -2264,6 +2264,10 @@ label {
   color: #777;
   align-items: center;
 }
+.pomo-mute-btn.muted {
+  background: #ffe8e8;
+  color: #c44;
+}
 .pomo-mins-input {
   width: 38px;
   text-align: center;
