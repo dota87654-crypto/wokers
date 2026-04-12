@@ -1755,6 +1755,7 @@ let memoCtx    = null;
 let memoDrawing = false;
 let memoLastPos = null;
 let memoTool   = { color: '#1a1a2e', size: 3, eraser: false };
+let memoCombinedSubMode = 'text'; // 'text' | 'draw'
 
 const MEMO_COLORS = ['#1a1a2e','#e74c3c','#3498db','#27ae60','#f39c12','#9b59b6','#ffffff'];
 const MEMO_SIZES  = [2, 5, 12];
@@ -1883,16 +1884,33 @@ function renderMemoContent() {
     memoBindDrawTools(cont, tab);
     initMemoCanvas();
 
-  } else { // combined
-    cont.innerHTML = modeBar + memoDrawToolbarHTML() +
-      `<div class="memo-combined-view">
-         <textarea class="memo-textarea memo-combined-text" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>
-         <div class="memo-combined-divider"></div>
-         <canvas class="memo-canvas memo-combined-canvas" id="memo-canvas"></canvas>
+  } else { // combined — 텍스트 위에 투명 캔버스 오버레이
+    const isDrawSub = memoCombinedSubMode === 'draw';
+    const drawTools = isDrawSub ? memoDrawToolbarHTML() : '';
+    cont.innerHTML = modeBar +
+      `<div class="memo-combined-toolbar">
+         <button class="memo-submode-btn${!isDrawSub?' active':''}" data-submode="text">✏ 텍스트 편집</button>
+         <button class="memo-submode-btn${isDrawSub?' active':''}" data-submode="draw">🖌 그리기</button>
+         ${drawTools}
+       </div>
+       <div class="memo-overlay-wrap" id="memo-overlay-wrap">
+         <textarea class="memo-textarea memo-overlay-text" id="memo-ta"
+           placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>
+         <canvas class="memo-canvas memo-overlay-canvas${isDrawSub?'':' no-pointer'}"
+           id="memo-canvas"></canvas>
        </div>`;
     document.getElementById('memo-ta').addEventListener('input', function() { tab.text = this.value; saveMemoData(); });
-    memoBindDrawTools(cont, tab);
-    initMemoCanvas();
+    if (isDrawSub) memoBindDrawTools(cont, tab);
+    initMemoCanvas(true); // overlay=true → 투명 배경
+
+    cont.querySelectorAll('.memo-submode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.submode === memoCombinedSubMode) return;
+        if (memoCombinedSubMode === 'draw' && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
+        memoCombinedSubMode = btn.dataset.submode;
+        renderMemoContent();
+      });
+    });
   }
 
   cont.querySelectorAll('.memo-mode-btn').forEach(btn => {
@@ -1904,26 +1922,34 @@ function renderMemoContent() {
   });
 }
 
-function initMemoCanvas() {
+function initMemoCanvas(overlay = false) {
   setTimeout(() => {
     const canvas = document.getElementById('memo-canvas');
     if (!canvas) return;
-    const body    = document.getElementById('memo-widget-body');
-    const tabBar  = document.querySelector('.memo-tab-bar');
-    const toolBar = document.querySelector('.memo-draw-toolbar');
-    const modeBar = document.querySelector('#memo-content .memo-toolbar');
-    const usedH   = (tabBar?.offsetHeight || 36) + (modeBar?.offsetHeight || 36) + (toolBar?.offsetHeight || 42);
-    const isCombined = !!document.querySelector('.memo-combined-view');
-    const fullW = body?.offsetWidth  || 520;
-    const w = isCombined ? Math.floor(fullW / 2) : fullW;
-    const h = Math.max(200, (body?.offsetHeight || 500) - usedH);
+    let w, h;
+    if (overlay) {
+      // 오버레이 모드: textarea와 같은 크기로 맞춤
+      const wrap = document.getElementById('memo-overlay-wrap');
+      w = wrap?.offsetWidth  || 520;
+      h = wrap?.offsetHeight || 400;
+    } else {
+      const body    = document.getElementById('memo-widget-body');
+      const tabBar  = document.querySelector('.memo-tab-bar');
+      const toolBar = document.querySelector('.memo-draw-toolbar');
+      const modeBar = document.querySelector('#memo-content .memo-toolbar');
+      const usedH   = (tabBar?.offsetHeight || 36) + (modeBar?.offsetHeight || 36) + (toolBar?.offsetHeight || 42);
+      w = body?.offsetWidth  || 520;
+      h = Math.max(200, (body?.offsetHeight || 500) - usedH);
+    }
     canvas.width  = w;
     canvas.height = h;
     memoCanvas = canvas; memoCtx = canvas.getContext('2d');
     memoCtx.lineCap = 'round'; memoCtx.lineJoin = 'round';
-    // 흰 배경
-    memoCtx.fillStyle = '#ffffff';
-    memoCtx.fillRect(0, 0, w, h);
+    if (!overlay) {
+      // 흰 배경 (일반 그리기 모드만)
+      memoCtx.fillStyle = '#ffffff';
+      memoCtx.fillRect(0, 0, w, h);
+    }
     // 저장된 그림 복원
     const tab = memoGetActive();
     if (tab?.canvasData) {
@@ -2001,9 +2027,10 @@ const memoWidgetEl = document.getElementById('widget-memo');
 if (memoWidgetEl && window.ResizeObserver) {
   new ResizeObserver(() => {
     const tab = memoGetActive();
-    if (tab?.mode === 'draw' && !memoWidgetEl.classList.contains('widget-hidden')) {
+    const isHidden = memoWidgetEl.classList.contains('widget-hidden');
+    if (!isHidden && (tab?.mode === 'draw' || tab?.mode === 'combined')) {
       if (memoCanvas) tab.canvasData = memoCanvas.toDataURL();
-      initMemoCanvas();
+      initMemoCanvas(tab.mode === 'combined');
     }
   }).observe(memoWidgetEl);
 }

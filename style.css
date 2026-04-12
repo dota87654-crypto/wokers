@@ -2118,27 +2118,53 @@ label {
   width: 100% !important;
 }
 
-/* 같이쓰기 모드 (텍스트 + 그리기 분할) */
-.memo-combined-view {
+/* 같이쓰기 모드 — 텍스트 위 투명 캔버스 오버레이 */
+.memo-combined-toolbar {
   display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #f5f6ff;
+  border-bottom: 1px solid #e0e2f0;
+  flex-wrap: wrap;
+}
+.memo-submode-btn {
+  padding: 3px 10px;
+  border: 1px solid #c5c8e8;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s;
+}
+.memo-submode-btn.active {
+  background: #6c63ff;
+  color: #fff;
+  border-color: #6c63ff;
+}
+.memo-overlay-wrap {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
 }
-.memo-combined-text {
-  flex: 1;
+.memo-overlay-text {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: none;
   border-radius: 0;
-  border-right: none;
-  min-width: 0;
+  box-sizing: border-box;
 }
-.memo-combined-divider {
-  width: 3px;
-  background: #e0e2f0;
-  flex-shrink: 0;
-  cursor: col-resize;
+.memo-overlay-canvas {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  cursor: crosshair;
 }
-.memo-combined-canvas {
-  flex: 1;
-  min-width: 0;
-  width: auto !important;
+.memo-overlay-canvas.no-pointer {
+  pointer-events: none;
 }
