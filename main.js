@@ -2045,7 +2045,10 @@ if (memoWidgetEl && window.ResizeObserver) {
     const tab = memoGetActive();
     const isHidden = memoWidgetEl.classList.contains('widget-hidden');
     if (!isHidden && (tab?.mode === 'draw' || tab?.mode === 'combined')) {
-      if (memoCanvas) {
+      // memoCanvas가 현재 DOM의 캔버스와 같을 때만 저장
+      // (모드 전환 직후엔 memoCanvas가 이전 모드 캔버스를 가리키므로 저장 금지)
+      const domCanvas = document.getElementById('memo-canvas');
+      if (memoCanvas && memoCanvas === domCanvas) {
         if (tab.mode === 'combined') tab.combinedCanvas = memoCanvas.toDataURL();
         else                         tab.canvasData     = memoCanvas.toDataURL();
       }
