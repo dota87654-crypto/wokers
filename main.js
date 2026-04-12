@@ -1856,9 +1856,16 @@ function memoBindDrawTools(cont, tab) {
   document.getElementById('memo-clear')?.addEventListener('click', () => {
     if (!memoCtx || !memoCanvas) return;
     memoCtx.globalCompositeOperation = 'source-over';
-    memoCtx.fillStyle = '#ffffff';
-    memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
-    tab.canvasData = null; saveMemoData();
+    if (tab.mode === 'combined') {
+      // 오버레이 모드: 투명하게 지워야 텍스트가 보임
+      memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
+      tab.combinedCanvas = null;
+    } else {
+      memoCtx.fillStyle = '#ffffff';
+      memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
+      tab.canvasData = null;
+    }
+    saveMemoData();
   });
 }
 
