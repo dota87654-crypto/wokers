@@ -1497,12 +1497,14 @@ const WIDGET_LABELS = {
   'widget-weather':  '🌤 날씨',
   'widget-calendar': '📅 달력',
   'widget-plans':    '📋 계획 목록',
+  'widget-memo':     '📝 메모장',
 };
 // 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
   'widget-weather':  { top: 0,   left: 0,   width: 888, height: 175 },
   'widget-calendar': { top: 199, left: 0,   width: 518, height: 620 },
   'widget-plans':    { top: 199, left: 542, width: 346, height: 620 },
+  'widget-memo':     { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
 };
 
 function saveWidgetLayout() {
@@ -1601,7 +1603,9 @@ function resetWidgetLayout() {
     w.style.left   = def.left   + 'px';
     w.style.width  = def.width  + 'px';
     w.style.height = def.height + 'px';
-    w.classList.remove('widget-hidden', 'wt-tiny', 'wt-mini', 'wt-compact');
+    const hideByDefault = !!(WIDGET_DEFAULTS[w.id]?.hiddenByDefault);
+    w.classList.toggle('widget-hidden', hideByDefault);
+    w.classList.remove('wt-tiny', 'wt-mini', 'wt-compact');
     w.style.zIndex = '';
   });
   updateWidgetAreaHeight();
@@ -1740,3 +1744,250 @@ applyWidgetLayout();
     w.classList.toggle('wt-compact', compact);
   }).observe(w);
 })();
+
+// ===================================================
+//  MEMO WIDGET
+// ===================================================
+const MEMO_KEY = 'daily_memo_v1';
+let memoData   = null;
+let memoCanvas = null;
+let memoCtx    = null;
+let memoDrawing = false;
+let memoLastPos = null;
+let memoTool   = { color: '#1a1a2e', size: 3, eraser: false };
+
+const MEMO_COLORS = ['#1a1a2e','#e74c3c','#3498db','#27ae60','#f39c12','#9b59b6','#ffffff'];
+const MEMO_SIZES  = [2, 5, 12];
+
+function loadMemoData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MEMO_KEY));
+    if (saved?.tabs?.length) { memoData = saved; return; }
+  } catch {}
+  const id = 'tab-' + Date.now();
+  memoData = { tabs: [{ id, name: '메모 1', mode: 'text', text: '', canvasData: null }], activeId: id };
+}
+
+function saveMemoData() {
+  const tab = memoGetActive();
+  if (tab?.mode === 'draw' && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
+  localStorage.setItem(MEMO_KEY, JSON.stringify(memoData));
+}
+
+function memoGetActive() {
+  return memoData?.tabs.find(t => t.id === memoData.activeId) ?? null;
+}
+
+function renderMemoTabs() {
+  const el = document.getElementById('memo-tabs');
+  if (!el) return;
+  el.innerHTML = memoData.tabs.map(t => `
+    <div class="memo-tab${t.id === memoData.activeId ? ' active' : ''}" data-id="${t.id}">
+      <span class="memo-tab-name" data-id="${t.id}">${escapeHtml(t.name)}</span>
+      ${memoData.tabs.length > 1
+        ? `<button class="memo-tab-del" data-id="${t.id}" title="탭 삭제">✕</button>`
+        : ''}
+    </div>`).join('');
+
+  el.querySelectorAll('.memo-tab').forEach(div => {
+    div.addEventListener('click', e => {
+      if (e.target.classList.contains('memo-tab-del')) return;
+      memoSwitchTab(div.dataset.id);
+    });
+  });
+  el.querySelectorAll('.memo-tab-name').forEach(span => {
+    span.addEventListener('dblclick', () => {
+      const t = memoData.tabs.find(x => x.id === span.dataset.id);
+      if (!t) return;
+      const n = prompt('탭 이름 변경:', t.name);
+      if (n?.trim()) { t.name = n.trim(); saveMemoData(); renderMemoTabs(); }
+    });
+  });
+  el.querySelectorAll('.memo-tab-del').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); memoDeleteTab(btn.dataset.id); });
+  });
+}
+
+function renderMemoContent() {
+  const cont = document.getElementById('memo-content');
+  if (!cont) return;
+  const tab = memoGetActive();
+  if (!tab) { cont.innerHTML = ''; return; }
+
+  const modeBar = `
+    <div class="memo-toolbar">
+      <button class="memo-mode-btn${tab.mode==='text'?' active':''}" data-mode="text">✏ 텍스트</button>
+      <button class="memo-mode-btn${tab.mode==='draw'?' active':''}" data-mode="draw">🖌 그리기</button>
+    </div>`;
+
+  if (tab.mode === 'text') {
+    cont.innerHTML = modeBar + `<textarea class="memo-textarea" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>`;
+    const ta = document.getElementById('memo-ta');
+    ta.addEventListener('input', () => { tab.text = ta.value; saveMemoData(); });
+  } else {
+    const colorBtns = MEMO_COLORS.map(c =>
+      `<button class="memo-color-btn${(!memoTool.eraser && memoTool.color===c)?' active':''}" data-color="${c}"
+       style="background:${c};${c==='#ffffff'?'border:1.5px solid #ccc;':''}"></button>`
+    ).join('');
+    const sizeBtns = MEMO_SIZES.map(s =>
+      `<button class="memo-size-btn${memoTool.size===s?' active':''}" data-size="${s}">
+         <span style="width:${s+3}px;height:${s+3}px;border-radius:50%;background:#444;display:inline-block;pointer-events:none;"></span>
+       </button>`
+    ).join('');
+    cont.innerHTML = modeBar + `
+      <div class="memo-draw-toolbar">
+        <div class="memo-colors">${colorBtns}</div>
+        <div class="memo-tool-sep"></div>
+        <div class="memo-sizes">${sizeBtns}</div>
+        <div class="memo-tool-sep"></div>
+        <button class="memo-eraser-btn${memoTool.eraser?' active':''}" id="memo-eraser">🧹 지우개</button>
+        <button class="memo-clear-btn" id="memo-clear">🗑 전체</button>
+      </div>
+      <canvas class="memo-canvas" id="memo-canvas"></canvas>`;
+    initMemoCanvas();
+
+    cont.querySelectorAll('.memo-color-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        memoTool.color = btn.dataset.color; memoTool.eraser = false;
+        cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('memo-eraser')?.classList.remove('active');
+      });
+    });
+    cont.querySelectorAll('.memo-size-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        memoTool.size = parseInt(btn.dataset.size);
+        cont.querySelectorAll('.memo-size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+    document.getElementById('memo-eraser')?.addEventListener('click', function() {
+      memoTool.eraser = !memoTool.eraser;
+      this.classList.toggle('active', memoTool.eraser);
+      cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
+      if (!memoTool.eraser) cont.querySelector(`[data-color="${memoTool.color}"]`)?.classList.add('active');
+    });
+    document.getElementById('memo-clear')?.addEventListener('click', () => {
+      if (!memoCtx || !memoCanvas) return;
+      memoCtx.globalCompositeOperation = 'source-over';
+      memoCtx.fillStyle = '#ffffff';
+      memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
+      tab.canvasData = null; saveMemoData();
+    });
+  }
+
+  cont.querySelectorAll('.memo-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.mode === tab.mode) return;
+      if (tab.mode === 'draw' && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
+      tab.mode = btn.dataset.mode; saveMemoData(); renderMemoContent();
+    });
+  });
+}
+
+function initMemoCanvas() {
+  setTimeout(() => {
+    const canvas = document.getElementById('memo-canvas');
+    if (!canvas) return;
+    const body    = document.getElementById('memo-widget-body');
+    const tabBar  = document.querySelector('.memo-tab-bar');
+    const toolBar = document.querySelector('.memo-draw-toolbar');
+    const modeBar = document.querySelector('#memo-content .memo-toolbar');
+    const usedH   = (tabBar?.offsetHeight || 36) + (modeBar?.offsetHeight || 36) + (toolBar?.offsetHeight || 42);
+    const w = body?.offsetWidth  || 520;
+    const h = Math.max(200, (body?.offsetHeight || 500) - usedH);
+    canvas.width  = w;
+    canvas.height = h;
+    memoCanvas = canvas; memoCtx = canvas.getContext('2d');
+    memoCtx.lineCap = 'round'; memoCtx.lineJoin = 'round';
+    // 흰 배경
+    memoCtx.fillStyle = '#ffffff';
+    memoCtx.fillRect(0, 0, w, h);
+    // 저장된 그림 복원
+    const tab = memoGetActive();
+    if (tab?.canvasData) {
+      const img = new Image();
+      img.onload = () => memoCtx.drawImage(img, 0, 0);
+      img.src = tab.canvasData;
+    }
+    attachMemoCanvasEvents(canvas);
+  }, 0);
+}
+
+function attachMemoCanvasEvents(canvas) {
+  const getPos = (e, touch) => {
+    const r = canvas.getBoundingClientRect();
+    const sx = canvas.width / r.width, sy = canvas.height / r.height;
+    const src = touch ? e.touches[0] : e;
+    return { x: (src.clientX - r.left) * sx, y: (src.clientY - r.top) * sy };
+  };
+  const start = e => {
+    e.preventDefault(); memoDrawing = true;
+    const p = getPos(e, e.touches);
+    memoLastPos = p;
+    memoCtx.globalCompositeOperation = memoTool.eraser ? 'destination-out' : 'source-over';
+    memoCtx.beginPath();
+    memoCtx.arc(p.x, p.y, (memoTool.eraser ? memoTool.size * 3 : memoTool.size) / 2, 0, Math.PI*2);
+    memoCtx.fillStyle = memoTool.eraser ? 'rgba(0,0,0,1)' : memoTool.color;
+    memoCtx.fill();
+  };
+  const move = e => {
+    if (!memoDrawing) return; e.preventDefault();
+    const p = getPos(e, e.touches);
+    memoCtx.globalCompositeOperation = memoTool.eraser ? 'destination-out' : 'source-over';
+    memoCtx.beginPath();
+    memoCtx.moveTo(memoLastPos.x, memoLastPos.y);
+    memoCtx.lineTo(p.x, p.y);
+    memoCtx.strokeStyle = memoTool.eraser ? 'rgba(0,0,0,1)' : memoTool.color;
+    memoCtx.lineWidth   = memoTool.eraser ? memoTool.size * 3 : memoTool.size;
+    memoCtx.stroke();
+    memoLastPos = p;
+  };
+  const end = () => {
+    if (!memoDrawing) return; memoDrawing = false;
+    const tab = memoGetActive();
+    if (tab) { tab.canvasData = memoCanvas.toDataURL(); saveMemoData(); }
+  };
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup',   end);
+  canvas.addEventListener('mouseleave',end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove',  move,  { passive: false });
+  canvas.addEventListener('touchend',   end);
+}
+
+function memoSwitchTab(id) {
+  const old = memoGetActive();
+  if (old?.mode === 'draw' && memoCanvas) old.canvasData = memoCanvas.toDataURL();
+  memoData.activeId = id; saveMemoData(); renderMemoTabs(); renderMemoContent();
+}
+function memoDeleteTab(id) {
+  if (memoData.tabs.length <= 1) { alert('마지막 탭은 삭제할 수 없어요.'); return; }
+  const idx = memoData.tabs.findIndex(t => t.id === id);
+  memoData.tabs.splice(idx, 1);
+  if (memoData.activeId === id) memoData.activeId = memoData.tabs[Math.max(0, idx-1)].id;
+  saveMemoData(); renderMemoTabs(); renderMemoContent();
+}
+function memoAddTab() {
+  const id = 'tab-' + Date.now();
+  memoData.tabs.push({ id, name: `메모 ${memoData.tabs.length + 1}`, mode: 'text', text: '', canvasData: null });
+  memoSwitchTab(id);
+}
+
+// 위젯 크기 변경 시 캔버스 재초기화
+const memoWidgetEl = document.getElementById('widget-memo');
+if (memoWidgetEl && window.ResizeObserver) {
+  new ResizeObserver(() => {
+    const tab = memoGetActive();
+    if (tab?.mode === 'draw' && !memoWidgetEl.classList.contains('widget-hidden')) {
+      if (memoCanvas) tab.canvasData = memoCanvas.toDataURL();
+      initMemoCanvas();
+    }
+  }).observe(memoWidgetEl);
+}
+
+loadMemoData();
+renderMemoTabs();
+renderMemoContent();
+document.getElementById('memo-tab-add')?.addEventListener('click', memoAddTab);
