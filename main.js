@@ -1498,10 +1498,11 @@ const WIDGET_LABELS = {
   'widget-calendar': '📅 달력',
   'widget-plans':    '📋 계획 목록',
 };
+// 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
-  'widget-weather':  { top: 0,   left: 0,   width: 780, height: 150 },
-  'widget-calendar': { top: 168, left: 0,   width: 460, height: 510 },
-  'widget-plans':    { top: 168, left: 480, width: 300, height: 510 },
+  'widget-weather':  { top: 0,   left: 0,   width: 888, height: 148 },
+  'widget-calendar': { top: 176, left: 0,   width: 518, height: 450 },
+  'widget-plans':    { top: 176, left: 542, width: 346, height: 450 },
 };
 
 function saveWidgetLayout() {
@@ -1588,6 +1589,27 @@ function setEditMode(on) {
 
 document.getElementById('widget-edit-btn').addEventListener('click', () => {
   setEditMode(!isEditMode);
+});
+
+// 초기화
+function resetWidgetLayout() {
+  localStorage.removeItem(WIDGET_LAYOUT_KEY);
+  document.querySelectorAll('.widget').forEach(w => {
+    const def = WIDGET_DEFAULTS[w.id];
+    if (!def) return;
+    w.style.top    = def.top    + 'px';
+    w.style.left   = def.left   + 'px';
+    w.style.width  = def.width  + 'px';
+    w.style.height = def.height + 'px';
+    w.classList.remove('widget-hidden', 'wt-tiny', 'wt-mini', 'wt-compact');
+    w.style.zIndex = '';
+  });
+  updateWidgetAreaHeight();
+}
+
+document.getElementById('widget-reset-btn').addEventListener('click', () => {
+  if (!confirm('위젯 배치를 기본값으로 초기화할까요?')) return;
+  resetWidgetLayout();
 });
 
 // 위젯 추가 버튼 (편집 모드일 때만 보임)

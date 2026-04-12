@@ -1861,6 +1861,23 @@ label {
 .widget-add-btn:hover { background: #eaedfc; }
 .widget-mgr-wrap.edit-active .widget-add-btn { display: inline-block; }
 
+.widget-reset-btn {
+  display: none;
+  background: #fdf5f0;
+  border: 1px solid #e8cfc0;
+  border-radius: 8px;
+  padding: 6px 13px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #c0703a;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.widget-reset-btn:hover { background: #f8e8de; }
+.widget-mgr-wrap.edit-active .widget-reset-btn { display: inline-block; }
+
 .widget-mgr-dropdown {
   position: absolute;
   top: calc(100% + 6px);
@@ -1911,7 +1928,7 @@ label {
   .widget-header { display: none !important; }
   .widget-resize-handle { display: none !important; }
   .widget-body { overflow: visible; border-radius: 16px; }
-  .widget-edit-btn, .widget-add-btn { display: none !important; }
+  .widget-edit-btn, .widget-add-btn, .widget-reset-btn { display: none !important; }
 }
 
 /* ===================================================
