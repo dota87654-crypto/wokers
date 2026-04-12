@@ -3,7 +3,12 @@
 // ===================================================
 const SUPABASE_URL = 'https://wtrastebtdlkusmgkwyj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_zsPwpQTmfyiKogJmau1_Jw_vD5qfJ-K';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    flowType: 'pkce',        // implicit 대신 PKCE — 토큰이 URL에 노출되지 않음
+    detectSessionInUrl: true, // 리다이렉트 후 자동으로 코드 교환
+  }
+});
 
 let currentUser = null;
 let cachedTodos = [];
@@ -18,7 +23,14 @@ const GUEST_TAGS_KEY  = 'guest_tags_v1';
 async function initAuth() {
   const { data: { session } } = await db.auth.getSession();
   handleSession(session);
-  db.auth.onAuthStateChange((_event, session) => handleSession(session));
+  db.auth.onAuthStateChange((_event, session) => {
+    // 로그인 후 URL에 남은 인증 파라미터 제거
+    if (window.location.hash.includes('access_token') ||
+        window.location.search.includes('code=')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    handleSession(session);
+  });
 }
 
 function handleSession(session) {
