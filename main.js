@@ -1808,6 +1808,57 @@ function renderMemoTabs() {
   });
 }
 
+function memoDrawToolbarHTML() {
+  const colorBtns = MEMO_COLORS.map(c =>
+    `<button class="memo-color-btn${(!memoTool.eraser && memoTool.color===c)?' active':''}" data-color="${c}"
+     style="background:${c};${c==='#ffffff'?'border:1.5px solid #ccc;':''}"></button>`
+  ).join('');
+  const sizeBtns = MEMO_SIZES.map(s =>
+    `<button class="memo-size-btn${memoTool.size===s?' active':''}" data-size="${s}">
+       <span style="width:${s+3}px;height:${s+3}px;border-radius:50%;background:#444;display:inline-block;pointer-events:none;"></span>
+     </button>`
+  ).join('');
+  return `<div class="memo-draw-toolbar">
+    <div class="memo-colors">${colorBtns}</div>
+    <div class="memo-tool-sep"></div>
+    <div class="memo-sizes">${sizeBtns}</div>
+    <div class="memo-tool-sep"></div>
+    <button class="memo-eraser-btn${memoTool.eraser?' active':''}" id="memo-eraser">🧹 지우개</button>
+    <button class="memo-clear-btn" id="memo-clear">🗑 전체</button>
+  </div>`;
+}
+
+function memoBindDrawTools(cont, tab) {
+  cont.querySelectorAll('.memo-color-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      memoTool.color = btn.dataset.color; memoTool.eraser = false;
+      cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('memo-eraser')?.classList.remove('active');
+    });
+  });
+  cont.querySelectorAll('.memo-size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      memoTool.size = parseInt(btn.dataset.size);
+      cont.querySelectorAll('.memo-size-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.getElementById('memo-eraser')?.addEventListener('click', function() {
+    memoTool.eraser = !memoTool.eraser;
+    this.classList.toggle('active', memoTool.eraser);
+    cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
+    if (!memoTool.eraser) cont.querySelector(`[data-color="${memoTool.color}"]`)?.classList.add('active');
+  });
+  document.getElementById('memo-clear')?.addEventListener('click', () => {
+    if (!memoCtx || !memoCanvas) return;
+    memoCtx.globalCompositeOperation = 'source-over';
+    memoCtx.fillStyle = '#ffffff';
+    memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
+    tab.canvasData = null; saveMemoData();
+  });
+}
+
 function renderMemoContent() {
   const cont = document.getElementById('memo-content');
   if (!cont) return;
@@ -1816,70 +1867,38 @@ function renderMemoContent() {
 
   const modeBar = `
     <div class="memo-toolbar">
-      <button class="memo-mode-btn${tab.mode==='text'?' active':''}" data-mode="text">✏ 텍스트</button>
-      <button class="memo-mode-btn${tab.mode==='draw'?' active':''}" data-mode="draw">🖌 그리기</button>
+      <button class="memo-mode-btn${tab.mode==='text'    ?' active':''}" data-mode="text">✏ 텍스트</button>
+      <button class="memo-mode-btn${tab.mode==='draw'    ?' active':''}" data-mode="draw">🖌 그리기</button>
+      <button class="memo-mode-btn${tab.mode==='combined'?' active':''}" data-mode="combined">✏🖌 같이쓰기</button>
     </div>`;
 
   if (tab.mode === 'text') {
-    cont.innerHTML = modeBar + `<textarea class="memo-textarea" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>`;
-    const ta = document.getElementById('memo-ta');
-    ta.addEventListener('input', () => { tab.text = ta.value; saveMemoData(); });
-  } else {
-    const colorBtns = MEMO_COLORS.map(c =>
-      `<button class="memo-color-btn${(!memoTool.eraser && memoTool.color===c)?' active':''}" data-color="${c}"
-       style="background:${c};${c==='#ffffff'?'border:1.5px solid #ccc;':''}"></button>`
-    ).join('');
-    const sizeBtns = MEMO_SIZES.map(s =>
-      `<button class="memo-size-btn${memoTool.size===s?' active':''}" data-size="${s}">
-         <span style="width:${s+3}px;height:${s+3}px;border-radius:50%;background:#444;display:inline-block;pointer-events:none;"></span>
-       </button>`
-    ).join('');
-    cont.innerHTML = modeBar + `
-      <div class="memo-draw-toolbar">
-        <div class="memo-colors">${colorBtns}</div>
-        <div class="memo-tool-sep"></div>
-        <div class="memo-sizes">${sizeBtns}</div>
-        <div class="memo-tool-sep"></div>
-        <button class="memo-eraser-btn${memoTool.eraser?' active':''}" id="memo-eraser">🧹 지우개</button>
-        <button class="memo-clear-btn" id="memo-clear">🗑 전체</button>
-      </div>
-      <canvas class="memo-canvas" id="memo-canvas"></canvas>`;
+    cont.innerHTML = modeBar +
+      `<textarea class="memo-textarea" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>`;
+    document.getElementById('memo-ta').addEventListener('input', function() { tab.text = this.value; saveMemoData(); });
+
+  } else if (tab.mode === 'draw') {
+    cont.innerHTML = modeBar + memoDrawToolbarHTML() +
+      `<canvas class="memo-canvas" id="memo-canvas"></canvas>`;
+    memoBindDrawTools(cont, tab);
     initMemoCanvas();
 
-    cont.querySelectorAll('.memo-color-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        memoTool.color = btn.dataset.color; memoTool.eraser = false;
-        cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById('memo-eraser')?.classList.remove('active');
-      });
-    });
-    cont.querySelectorAll('.memo-size-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        memoTool.size = parseInt(btn.dataset.size);
-        cont.querySelectorAll('.memo-size-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-    document.getElementById('memo-eraser')?.addEventListener('click', function() {
-      memoTool.eraser = !memoTool.eraser;
-      this.classList.toggle('active', memoTool.eraser);
-      cont.querySelectorAll('.memo-color-btn').forEach(b => b.classList.remove('active'));
-      if (!memoTool.eraser) cont.querySelector(`[data-color="${memoTool.color}"]`)?.classList.add('active');
-    });
-    document.getElementById('memo-clear')?.addEventListener('click', () => {
-      if (!memoCtx || !memoCanvas) return;
-      memoCtx.globalCompositeOperation = 'source-over';
-      memoCtx.fillStyle = '#ffffff';
-      memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
-      tab.canvasData = null; saveMemoData();
-    });
+  } else { // combined
+    cont.innerHTML = modeBar + memoDrawToolbarHTML() +
+      `<div class="memo-combined-view">
+         <textarea class="memo-textarea memo-combined-text" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>
+         <div class="memo-combined-divider"></div>
+         <canvas class="memo-canvas memo-combined-canvas" id="memo-canvas"></canvas>
+       </div>`;
+    document.getElementById('memo-ta').addEventListener('input', function() { tab.text = this.value; saveMemoData(); });
+    memoBindDrawTools(cont, tab);
+    initMemoCanvas();
   }
 
   cont.querySelectorAll('.memo-mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       if (btn.dataset.mode === tab.mode) return;
-      if (tab.mode === 'draw' && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
+      if ((tab.mode === 'draw' || tab.mode === 'combined') && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
       tab.mode = btn.dataset.mode; saveMemoData(); renderMemoContent();
     });
   });
@@ -1894,7 +1913,9 @@ function initMemoCanvas() {
     const toolBar = document.querySelector('.memo-draw-toolbar');
     const modeBar = document.querySelector('#memo-content .memo-toolbar');
     const usedH   = (tabBar?.offsetHeight || 36) + (modeBar?.offsetHeight || 36) + (toolBar?.offsetHeight || 42);
-    const w = body?.offsetWidth  || 520;
+    const isCombined = !!document.querySelector('.memo-combined-view');
+    const fullW = body?.offsetWidth  || 520;
+    const w = isCombined ? Math.floor(fullW / 2) : fullW;
     const h = Math.max(200, (body?.offsetHeight || 500) - usedH);
     canvas.width  = w;
     canvas.height = h;

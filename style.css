@@ -2117,3 +2117,28 @@ label {
   cursor: crosshair; touch-action: none;
   width: 100% !important;
 }
+
+/* 같이쓰기 모드 (텍스트 + 그리기 분할) */
+.memo-combined-view {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.memo-combined-text {
+  flex: 1;
+  border-radius: 0;
+  border-right: none;
+  min-width: 0;
+}
+.memo-combined-divider {
+  width: 3px;
+  background: #e0e2f0;
+  flex-shrink: 0;
+  cursor: col-resize;
+}
+.memo-combined-canvas {
+  flex: 1;
+  min-width: 0;
+  width: auto !important;
+}
