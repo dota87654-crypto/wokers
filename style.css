@@ -2168,3 +2168,110 @@ label {
 .memo-overlay-canvas.no-pointer {
   display: none;
 }
+
+/* ===================================================
+   뽀모도로 타이머 위젯
+   =================================================== */
+.pomo-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 10px 10px;
+  gap: 8px;
+  overflow: hidden;
+}
+#pomo-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.pomo-mode {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #555;
+}
+.pomo-ring-wrap {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  flex-shrink: 0;
+}
+.pomo-svg {
+  width: 130px;
+  height: 130px;
+}
+.pomo-time {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #2d2d3a;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.pomo-dots {
+  display: flex;
+  gap: 6px;
+}
+.pomo-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #dde;
+  transition: background 0.3s;
+}
+.pomo-dot.done {
+  background: #e05252; /* 동적으로 덮어씌워짐 */
+}
+.pomo-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pomo-btn {
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: filter 0.15s, transform 0.1s;
+}
+.pomo-btn:hover  { filter: brightness(1.08); }
+.pomo-btn:active { transform: scale(0.95); }
+.pomo-btn-main {
+  padding: 7px 20px;
+  background: #e05252;
+  color: #fff;
+  min-width: 100px;
+}
+.pomo-btn-sub {
+  padding: 7px 10px;
+  background: #f0f1f8;
+  color: #555;
+  font-size: 0.95rem;
+}
+.pomo-settings {
+  display: flex;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: #777;
+  align-items: center;
+}
+.pomo-mins-input {
+  width: 38px;
+  text-align: center;
+  border: 1px solid #dde;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.78rem;
+  color: #334;
+  background: #f8f8fc;
+  margin: 0 2px;
+}

@@ -1494,17 +1494,19 @@ const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v2';
 let isEditMode = false;
 
 const WIDGET_LABELS = {
-  'widget-weather':  '🌤 날씨',
-  'widget-calendar': '📅 달력',
-  'widget-plans':    '📋 계획 목록',
-  'widget-memo':     '📝 메모장',
+  'widget-weather':   '🌤 날씨',
+  'widget-calendar':  '📅 달력',
+  'widget-plans':     '📋 계획 목록',
+  'widget-memo':      '📝 메모장',
+  'widget-pomodoro':  '🍅 뽀모도로',
 };
 // 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
-  'widget-weather':  { top: 0,   left: 0,   width: 888, height: 175 },
-  'widget-calendar': { top: 199, left: 0,   width: 518, height: 620 },
-  'widget-plans':    { top: 199, left: 542, width: 346, height: 620 },
-  'widget-memo':     { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
+  'widget-weather':   { top: 0,   left: 0,   width: 888, height: 175 },
+  'widget-calendar':  { top: 199, left: 0,   width: 518, height: 620 },
+  'widget-plans':     { top: 199, left: 542, width: 346, height: 620 },
+  'widget-memo':      { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
+  'widget-pomodoro':  { top: 199, left: 294, width: 300, height: 360, hiddenByDefault: true },
 };
 
 function saveWidgetLayout() {
@@ -2039,3 +2041,180 @@ loadMemoData();
 renderMemoTabs();
 renderMemoContent();
 document.getElementById('memo-tab-add')?.addEventListener('click', memoAddTab);
+
+// ===================================================
+//  뽀모도로 타이머
+// ===================================================
+const POMO_KEY = 'pomo_settings_v1';
+
+let pomoState = (() => {
+  const saved = JSON.parse(localStorage.getItem(POMO_KEY) || 'null');
+  return saved || {
+    mode: 'focus',      // 'focus' | 'break' | 'longbreak'
+    timeLeft: 25 * 60,
+    running: false,
+    session: 0,         // 완료된 집중 세션 수 (0~3)
+    focusMins: 25,
+    breakMins: 5,
+    longBreakMins: 15,
+  };
+})();
+// 페이지 로드 시 실행 중이었던 상태는 중단으로 초기화
+pomoState.running = false;
+
+let pomoInterval = null;
+
+function pomoSave() {
+  localStorage.setItem(POMO_KEY, JSON.stringify(pomoState));
+}
+
+function pomoTotalSecs() {
+  if (pomoState.mode === 'focus')     return pomoState.focusMins     * 60;
+  if (pomoState.mode === 'break')     return pomoState.breakMins     * 60;
+  return pomoState.longBreakMins * 60;
+}
+
+function pomoTick() {
+  pomoState.timeLeft--;
+  if (pomoState.timeLeft <= 0) {
+    pomoFinish();
+  } else {
+    renderPomoTimer();
+    pomoSave();
+  }
+}
+
+function pomoFinish() {
+  clearInterval(pomoInterval);
+  pomoInterval = null;
+  pomoState.running = false;
+
+  if (pomoState.mode === 'focus') {
+    pomoState.session = (pomoState.session + 1) % 4;
+    if (pomoState.session === 0) {
+      pomoState.mode = 'longbreak';
+      pomoState.timeLeft = pomoState.longBreakMins * 60;
+    } else {
+      pomoState.mode = 'break';
+      pomoState.timeLeft = pomoState.breakMins * 60;
+    }
+  } else {
+    pomoState.mode = 'focus';
+    pomoState.timeLeft = pomoState.focusMins * 60;
+  }
+
+  pomoSave();
+  renderPomoTimer();
+
+  // 브라우저 알림 (권한 있을 때만)
+  if (Notification?.permission === 'granted') {
+    const msg = pomoState.mode === 'focus' ? '🍅 집중 시간을 시작하세요!' :
+                pomoState.mode === 'break' ? '☕ 잠깐 쉬어가세요!' : '🌙 긴 휴식 시간입니다!';
+    new Notification('뽀모도로', { body: msg, icon: '/favicon.ico' });
+  }
+}
+
+function pomoStart() {
+  if (pomoState.running) return;
+  pomoState.running = true;
+  pomoInterval = setInterval(pomoTick, 1000);
+  renderPomoTimer();
+  pomoSave();
+}
+
+function pomoPause() {
+  if (!pomoState.running) return;
+  pomoState.running = false;
+  clearInterval(pomoInterval);
+  pomoInterval = null;
+  renderPomoTimer();
+  pomoSave();
+}
+
+function pomoReset() {
+  clearInterval(pomoInterval);
+  pomoInterval = null;
+  pomoState.running = false;
+  pomoState.mode = 'focus';
+  pomoState.timeLeft = pomoState.focusMins * 60;
+  pomoState.session = 0;
+  renderPomoTimer();
+  pomoSave();
+}
+
+function pomoSkip() {
+  if (pomoState.running) { clearInterval(pomoInterval); pomoInterval = null; }
+  pomoFinish();
+}
+
+function renderPomoTimer() {
+  const el = document.getElementById('pomo-display');
+  if (!el) return;
+
+  const mins = String(Math.floor(pomoState.timeLeft / 60)).padStart(2, '0');
+  const secs = String(pomoState.timeLeft % 60).padStart(2, '0');
+
+  const total    = pomoTotalSecs();
+  const r        = 52;
+  const circ     = 2 * Math.PI * r;
+  const offset   = circ * (1 - pomoState.timeLeft / total);
+
+  const isFocus = pomoState.mode === 'focus';
+  const isLong  = pomoState.mode === 'longbreak';
+  const modeLabel = isFocus ? '🍅 집중' : isLong ? '🌙 긴 휴식' : '☕ 휴식';
+  const modeColor = isFocus ? '#e05252' : isLong ? '#5b8dee' : '#3dba7d';
+  const trackColor = isFocus ? '#fde8e8' : isLong ? '#dde8fd' : '#d4f5e5';
+
+  const dots = Array.from({ length: 4 }, (_, i) =>
+    `<span class="pomo-dot${i < pomoState.session ? ' done' : ''}"
+      style="${i < pomoState.session ? `background:${modeColor}` : ''}"></span>`
+  ).join('');
+
+  el.innerHTML = `
+    <div class="pomo-mode">${modeLabel}</div>
+    <div class="pomo-ring-wrap">
+      <svg class="pomo-svg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle class="pomo-track" cx="60" cy="60" r="${r}" fill="none"
+          stroke="${trackColor}" stroke-width="8"/>
+        <circle class="pomo-arc" cx="60" cy="60" r="${r}" fill="none"
+          stroke="${modeColor}" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"
+          transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="pomo-time">${mins}:${secs}</div>
+    </div>
+    <div class="pomo-dots">${dots}</div>
+    <div class="pomo-controls">
+      ${pomoState.running
+        ? `<button class="pomo-btn pomo-btn-main" id="pomo-pause-btn">⏸ 일시정지</button>`
+        : `<button class="pomo-btn pomo-btn-main" id="pomo-start-btn"
+            style="background:${modeColor}">▶ 시작</button>`}
+      <button class="pomo-btn pomo-btn-sub" id="pomo-skip-btn" title="다음 단계로">⏭</button>
+      <button class="pomo-btn pomo-btn-sub" id="pomo-reset-btn" title="초기화">↺</button>
+    </div>
+    <div class="pomo-settings">
+      <label>집중 <input class="pomo-mins-input" id="pomo-focus-input" type="number" min="1" max="60" value="${pomoState.focusMins}">분</label>
+      <label>휴식 <input class="pomo-mins-input" id="pomo-break-input" type="number" min="1" max="30" value="${pomoState.breakMins}">분</label>
+    </div>
+  `;
+
+  el.querySelector('#pomo-start-btn')?.addEventListener('click', pomoStart);
+  el.querySelector('#pomo-pause-btn')?.addEventListener('click', pomoPause);
+  el.querySelector('#pomo-skip-btn')?.addEventListener('click', pomoSkip);
+  el.querySelector('#pomo-reset-btn')?.addEventListener('click', pomoReset);
+  el.querySelector('#pomo-focus-input')?.addEventListener('change', function() {
+    const v = Math.max(1, Math.min(60, parseInt(this.value) || 25));
+    pomoState.focusMins = v;
+    if (pomoState.mode === 'focus' && !pomoState.running) pomoState.timeLeft = v * 60;
+    pomoSave(); renderPomoTimer();
+  });
+  el.querySelector('#pomo-break-input')?.addEventListener('change', function() {
+    const v = Math.max(1, Math.min(30, parseInt(this.value) || 5));
+    pomoState.breakMins = v;
+    if (pomoState.mode === 'break' && !pomoState.running) pomoState.timeLeft = v * 60;
+    pomoSave(); renderPomoTimer();
+  });
+}
+
+// 위젯이 보일 때마다 렌더링 (show 이벤트 대신 초기 렌더)
+renderPomoTimer();
