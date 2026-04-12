@@ -1476,8 +1476,27 @@ document.addEventListener('keydown', e => {
   }
 });
 
+function getContactRateLimit() {
+  try { return JSON.parse(localStorage.getItem('contact_rate') || '{}'); } catch { return {}; }
+}
+function checkContactRateLimit() {
+  const today = new Date().toISOString().slice(0, 10);
+  const r = getContactRateLimit();
+  return r.date === today ? (r.count || 0) : 0;
+}
+function incrementContactRateLimit() {
+  const today = new Date().toISOString().slice(0, 10);
+  const r = getContactRateLimit();
+  const count = (r.date === today ? (r.count || 0) : 0) + 1;
+  localStorage.setItem('contact_rate', JSON.stringify({ date: today, count }));
+}
+
 contactForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+  if (checkContactRateLimit() >= 3) {
+    alert('하루 최대 3건까지만 문의할 수 있습니다. 내일 다시 시도해 주세요.');
+    return;
+  }
   submitBtn.disabled = true;
   submitBtn.textContent = '전송 중...';
   try {
@@ -1486,8 +1505,10 @@ contactForm.addEventListener('submit', async (e) => {
       headers: { 'Accept': 'application/json' },
       body: new FormData(contactForm),
     });
-    if (res.ok) { contactForm.style.display = 'none'; successBox.style.display = 'block'; contactForm.reset(); }
-    else alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    if (res.ok) {
+      incrementContactRateLimit();
+      contactForm.style.display = 'none'; successBox.style.display = 'block'; contactForm.reset();
+    } else alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
   } catch { alert('네트워크 오류가 발생했습니다.'); }
   finally { submitBtn.disabled = false; submitBtn.textContent = '문의 보내기'; }
 });
