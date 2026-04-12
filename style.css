@@ -2166,5 +2166,5 @@ label {
   cursor: crosshair;
 }
 .memo-overlay-canvas.no-pointer {
-  pointer-events: none;
+  display: none;
 }
