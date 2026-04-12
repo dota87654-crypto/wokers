@@ -871,13 +871,18 @@ async function handleAddTodo() {
       cachedTodos.push(...newItems);
       localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
     } else {
-      const todoArray = dates.map(date => {
-        const item = { user_id: currentUser.id, headline, text: textEl.value.trim(), date, completed: false, tag_id: selectedTagId || null };
+      const baseItem = (date) => ({ user_id: currentUser.id, headline, text: textEl.value.trim(), date, completed: false, tag_id: selectedTagId || null });
+      let todoArray = dates.map(date => {
+        const item = baseItem(date);
         if (todoTime)              item.time     = todoTime;
         if (todoPriority !== null) item.priority = todoPriority;
         return item;
       });
-      const { data, error } = await db.from('todos').insert(todoArray).select();
+      let { data, error } = await db.from('todos').insert(todoArray).select();
+      if (error) {
+        // 컬럼 없음 오류 → 기본 필드만으로 재시도
+        ({ data, error } = await db.from('todos').insert(dates.map(baseItem)).select());
+      }
       if (!error) { cachedTodos.push(...data); }
     }
 
