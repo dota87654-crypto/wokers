@@ -1499,7 +1499,11 @@ const WIDGET_LABELS = {
   'widget-plans':     '📋 계획 목록',
   'widget-memo':      '📝 메모장',
   'widget-pomodoro':  '🍅 뽀모도로',
-  'widget-clock':     '🕐 시계',
+  'widget-clock-1':   '🕐 시계 1',
+  'widget-clock-2':   '🕐 시계 2',
+  'widget-clock-3':   '🕐 시계 3',
+  'widget-clock-4':   '🕐 시계 4',
+  'widget-clock-5':   '🕐 시계 5',
 };
 // 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
@@ -1508,7 +1512,11 @@ const WIDGET_DEFAULTS = {
   'widget-plans':     { top: 199, left: 542, width: 346, height: 620 },
   'widget-memo':      { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
   'widget-pomodoro':  { top: 199, left: 294, width: 300, height: 360, hiddenByDefault: true },
-  'widget-clock':     { top: 60,  left: 320, width: 280, height: 160, hiddenByDefault: true },
+  'widget-clock-1':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
+  'widget-clock-2':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
+  'widget-clock-3':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
+  'widget-clock-4':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
+  'widget-clock-5':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
 };
 
 function saveWidgetLayout() {
@@ -2269,24 +2277,98 @@ function renderPomoTimer() {
 renderPomoTimer();
 
 // ===================================================
-//  시계 위젯
+//  시계 위젯 (최대 5개, 각각 독립 타임존)
 // ===================================================
-function renderClock() {
-  const el = document.getElementById('clock-display');
-  if (!el) return;
+const CLOCK_SETTINGS_KEY = 'clock_settings_v1';
 
-  const now  = new Date();
-  const hh   = String(now.getHours()).padStart(2, '0');
-  const mm   = String(now.getMinutes()).padStart(2, '0');
-  const ss   = String(now.getSeconds()).padStart(2, '0');
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  const dateStr = `${now.getFullYear()}. ${now.getMonth() + 1}. ${now.getDate()}. (${days[now.getDay()]})`;
+const CLOCK_TIMEZONES = [
+  { label: '🇰🇷 한국',              tz: 'Asia/Seoul' },
+  { label: '🇯🇵 일본',              tz: 'Asia/Tokyo' },
+  { label: '🇨🇳 중국',              tz: 'Asia/Shanghai' },
+  { label: '🇸🇬 싱가포르',          tz: 'Asia/Singapore' },
+  { label: '🇮🇳 인도',              tz: 'Asia/Kolkata' },
+  { label: '🇦🇪 두바이',            tz: 'Asia/Dubai' },
+  { label: '🇷🇺 러시아(모스크바)',  tz: 'Europe/Moscow' },
+  { label: '🇬🇧 영국',              tz: 'Europe/London' },
+  { label: '🇩🇪 독일',              tz: 'Europe/Berlin' },
+  { label: '🇫🇷 프랑스',            tz: 'Europe/Paris' },
+  { label: '🇺🇸 미국 동부',         tz: 'America/New_York' },
+  { label: '🇺🇸 미국 서부',         tz: 'America/Los_Angeles' },
+  { label: '🇧🇷 브라질',            tz: 'America/Sao_Paulo' },
+  { label: '🇦🇺 호주(시드니)',       tz: 'Australia/Sydney' },
+  { label: '🇳🇿 뉴질랜드',          tz: 'Pacific/Auckland' },
+];
 
-  el.innerHTML = `
-    <div class="clock-time">${hh}<span class="clock-colon">:</span>${mm}<span class="clock-colon">:</span>${ss}</div>
-    <div class="clock-date">${dateStr}</div>
-  `;
+const CLOCK_TZ_DEFAULTS = {
+  'widget-clock-1': 'Asia/Seoul',
+  'widget-clock-2': 'America/New_York',
+  'widget-clock-3': 'Europe/London',
+  'widget-clock-4': 'Asia/Tokyo',
+  'widget-clock-5': 'Asia/Shanghai',
+};
+
+function loadClockSettings() {
+  try { return JSON.parse(localStorage.getItem(CLOCK_SETTINGS_KEY)) || {}; }
+  catch { return {}; }
 }
 
-renderClock();
-setInterval(renderClock, 1000);
+function getClockTz(clockId) {
+  return loadClockSettings()[clockId] || CLOCK_TZ_DEFAULTS[clockId] || 'Asia/Seoul';
+}
+
+function saveClockTz(clockId, tz) {
+  const s = loadClockSettings();
+  s[clockId] = tz;
+  localStorage.setItem(CLOCK_SETTINGS_KEY, JSON.stringify(s));
+}
+
+// 위젯 구조 초기화 (처음 한 번만)
+function initClockWidget(num) {
+  const el = document.getElementById(`clock-display-${num}`);
+  if (!el || el.dataset.init) return;
+  el.dataset.init = '1';
+
+  const clockId = `widget-clock-${num}`;
+  const tz = getClockTz(clockId);
+  const opts = CLOCK_TIMEZONES.map(t =>
+    `<option value="${t.tz}"${t.tz === tz ? ' selected' : ''}>${t.label}</option>`
+  ).join('');
+
+  el.innerHTML = `
+    <select class="clock-tz-select" id="clock-select-${num}">${opts}</select>
+    <div class="clock-time" id="clock-time-${num}"></div>
+    <div class="clock-date" id="clock-date-${num}"></div>
+  `;
+
+  document.getElementById(`clock-select-${num}`).addEventListener('change', function() {
+    saveClockTz(clockId, this.value);
+    tickClock(num);
+  });
+}
+
+// 매초 시간만 업데이트
+function tickClock(num) {
+  const timeEl = document.getElementById(`clock-time-${num}`);
+  const dateEl = document.getElementById(`clock-date-${num}`);
+  if (!timeEl || !dateEl) return;
+
+  const tz  = getClockTz(`widget-clock-${num}`);
+  const now = new Date();
+  try {
+    const t = now.toLocaleTimeString('ko-KR', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const d = now.toLocaleDateString('ko-KR', { timeZone: tz, year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    const [hh, mm, ss] = t.split(':');
+    timeEl.innerHTML = `${hh}<span class="clock-colon">:</span>${mm}<span class="clock-colon">:</span>${ss}`;
+    dateEl.textContent = d;
+  } catch {}
+}
+
+function tickAllClocks() {
+  for (let i = 1; i <= 5; i++) {
+    initClockWidget(i);
+    tickClock(i);
+  }
+}
+
+tickAllClocks();
+setInterval(tickAllClocks, 1000);
