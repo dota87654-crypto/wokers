@@ -1967,3 +1967,6 @@ label {
 #widget-weather.wt-tiny .weather-temp        { font-size: 1.3rem; }
 #widget-weather.wt-tiny .weather-city        { font-size: 0.72rem; }
 #widget-weather.wt-tiny .weather-city-row    { margin-bottom: 0; }
+
+/* 날씨 위젯: 기본 상태에서 스크롤바 없이 클리핑 */
+#widget-weather .widget-body { overflow: hidden; }
