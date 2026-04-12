@@ -1490,14 +1490,14 @@ initAuth();
 // ===================================================
 //  WIDGET SYSTEM
 // ===================================================
-const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v1';
+const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v2';
+let isEditMode = false;
 
 const WIDGET_LABELS = {
   'widget-weather':  '🌤 날씨',
   'widget-calendar': '📅 달력',
   'widget-plans':    '📋 계획 목록',
 };
-
 const WIDGET_DEFAULTS = {
   'widget-weather':  { top: 0,   left: 0,   width: 780, height: 150 },
   'widget-calendar': { top: 168, left: 0,   width: 460, height: 510 },
@@ -1524,12 +1524,11 @@ function loadWidgetLayout() {
 }
 
 function applyWidgetLayout() {
-  // 모바일이면 적용 안 함
   if (window.innerWidth <= 800) return;
   const saved = loadWidgetLayout();
   document.querySelectorAll('.widget').forEach(w => {
     const def = WIDGET_DEFAULTS[w.id] || { top: 0, left: 0, width: 300, height: 200 };
-    const s   = saved[w.id] ? saved[w.id] : def;
+    const s   = saved[w.id] ?? def;
     w.style.top    = s.top    + 'px';
     w.style.left   = s.left   + 'px';
     w.style.width  = s.width  + 'px';
@@ -1537,7 +1536,6 @@ function applyWidgetLayout() {
     if (s.hidden) w.classList.add('widget-hidden');
   });
   updateWidgetAreaHeight();
-  updateWidgetMgrDropdown();
 }
 
 function updateWidgetAreaHeight() {
@@ -1555,7 +1553,7 @@ function updateWidgetMgrDropdown() {
   const dropdown = document.getElementById('widget-mgr-dropdown');
   const hidden   = [...document.querySelectorAll('.widget.widget-hidden')];
   if (!hidden.length) {
-    dropdown.innerHTML = '<div class="widget-mgr-empty">모든 위젯이 표시 중이에요</div>';
+    dropdown.innerHTML = '<div class="widget-mgr-empty">숨긴 위젯이 없어요</div>';
     return;
   }
   dropdown.innerHTML = hidden.map(w =>
@@ -1575,50 +1573,75 @@ function updateWidgetMgrDropdown() {
   });
 }
 
-// 드래그
+// 편집 모드 전환
+function setEditMode(on) {
+  isEditMode = on;
+  const area    = document.getElementById('widget-area');
+  const editBtn = document.getElementById('widget-edit-btn');
+  const wrap    = document.getElementById('widget-mgr-wrap');
+  area.classList.toggle('edit-mode', on);
+  editBtn.classList.toggle('active', on);
+  editBtn.textContent = on ? '✓ 편집 완료' : '✏ 편집';
+  wrap.classList.toggle('edit-active', on);
+  if (!on) document.getElementById('widget-mgr-dropdown').style.display = 'none';
+}
+
+document.getElementById('widget-edit-btn').addEventListener('click', () => {
+  setEditMode(!isEditMode);
+});
+
+// 위젯 추가 버튼 (편집 모드일 때만 보임)
+document.getElementById('widget-add-btn').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd   = document.getElementById('widget-mgr-dropdown');
+  const open = dd.style.display !== 'none';
+  dd.style.display = open ? 'none' : 'block';
+  if (!open) updateWidgetMgrDropdown();
+});
+
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', e => {
+  if (!e.target.closest('.widget-mgr-wrap')) {
+    document.getElementById('widget-mgr-dropdown').style.display = 'none';
+  }
+});
+
+// 드래그 (편집 모드일 때만 동작)
 function initWidgetDrag(widget) {
   const header = widget.querySelector('.widget-header');
 
-  const startDrag = (clientX, clientY) => {
-    if (window.innerWidth <= 800) return;
-    document.querySelectorAll('.widget').forEach(w => { w.style.zIndex = '1'; });
+  header.addEventListener('mousedown', e => {
+    if (!isEditMode || window.innerWidth <= 800) return;
+    if (e.target.classList.contains('widget-close')) return;
+    e.preventDefault();
+    document.querySelectorAll('.widget').forEach(w => w.style.zIndex = '1');
     widget.style.zIndex = '10';
     header.classList.add('is-dragging');
-
-    const startX = clientX - widget.offsetLeft;
-    const startY = clientY - widget.offsetTop;
-
+    const startX = e.clientX - widget.offsetLeft;
+    const startY = e.clientY - widget.offsetTop;
     const onMove = e => {
       widget.style.left = Math.max(0, e.clientX - startX) + 'px';
       widget.style.top  = Math.max(0, e.clientY - startY) + 'px';
     };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup',   onUp);
+      document.removeEventListener('mouseup', onUp);
       header.classList.remove('is-dragging');
       saveWidgetLayout();
       updateWidgetAreaHeight();
     };
     document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup',   onUp);
-  };
-
-  header.addEventListener('mousedown', e => {
-    if (e.target.classList.contains('widget-close')) return;
-    e.preventDefault();
-    startDrag(e.clientX, e.clientY);
+    document.addEventListener('mouseup', onUp);
   });
 
-  // 터치 지원
   header.addEventListener('touchstart', e => {
+    if (!isEditMode || window.innerWidth <= 800) return;
     if (e.target.classList.contains('widget-close')) return;
-    if (window.innerWidth <= 800) return;
     const t = e.touches[0];
     widget.style.zIndex = '10';
     header.classList.add('is-dragging');
     const startX = t.clientX - widget.offsetLeft;
     const startY = t.clientY - widget.offsetTop;
-
     const onMove = e => {
       e.preventDefault();
       const tc = e.touches[0];
@@ -1627,72 +1650,52 @@ function initWidgetDrag(widget) {
     };
     const onEnd = () => {
       document.removeEventListener('touchmove', onMove);
-      document.removeEventListener('touchend',  onEnd);
+      document.removeEventListener('touchend', onEnd);
       header.classList.remove('is-dragging');
       saveWidgetLayout();
       updateWidgetAreaHeight();
     };
     document.addEventListener('touchmove', onMove, { passive: false });
-    document.addEventListener('touchend',  onEnd);
+    document.addEventListener('touchend', onEnd);
   }, { passive: true });
 }
 
-// 리사이즈
+// 리사이즈 (편집 모드일 때만 동작)
 function initWidgetResize(widget) {
   const handle = widget.querySelector('.widget-resize-handle');
   handle.addEventListener('mousedown', e => {
+    if (!isEditMode || window.innerWidth <= 800) return;
     e.preventDefault();
     e.stopPropagation();
-    if (window.innerWidth <= 800) return;
-
     widget.style.zIndex = '10';
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startW = widget.offsetWidth;
-    const startH = widget.offsetHeight;
-
+    const startX = e.clientX, startY = e.clientY;
+    const startW = widget.offsetWidth, startH = widget.offsetHeight;
     const onMove = e => {
       widget.style.width  = Math.max(220, startW + e.clientX - startX) + 'px';
       widget.style.height = Math.max(80,  startH + e.clientY - startY) + 'px';
     };
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup',   onUp);
+      document.removeEventListener('mouseup', onUp);
       saveWidgetLayout();
       updateWidgetAreaHeight();
     };
     document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup',   onUp);
+    document.addEventListener('mouseup', onUp);
   });
 }
 
-// 닫기
+// 닫기 (편집 모드일 때만 동작)
 function initWidgetClose(widget) {
   widget.querySelector('.widget-close').addEventListener('click', () => {
+    if (!isEditMode) return;
     widget.classList.add('widget-hidden');
     saveWidgetLayout();
-    updateWidgetMgrDropdown();
     updateWidgetAreaHeight();
   });
 }
 
-// 위젯 관리 버튼
-document.getElementById('widget-mgr-btn').addEventListener('click', e => {
-  e.stopPropagation();
-  const dd = document.getElementById('widget-mgr-dropdown');
-  const open = dd.style.display !== 'none';
-  dd.style.display = open ? 'none' : 'block';
-  if (!open) updateWidgetMgrDropdown();
-});
-
-// 외부 클릭 시 위젯 드롭다운 닫기
-document.addEventListener('click', e => {
-  if (!e.target.closest('.widget-mgr-wrap')) {
-    document.getElementById('widget-mgr-dropdown').style.display = 'none';
-  }
-});
-
-// 모든 위젯 초기화
+// 초기화
 document.querySelectorAll('.widget').forEach(widget => {
   initWidgetDrag(widget);
   initWidgetResize(widget);
