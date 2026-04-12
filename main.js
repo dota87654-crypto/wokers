@@ -1634,6 +1634,7 @@ function setEditMode(on) {
   editBtn.classList.toggle('active', on);
   editBtn.textContent = on ? '✓ 편집 완료' : '✏ 편집';
   wrap.classList.toggle('edit-active', on);
+  document.querySelector('.dash-header')?.classList.toggle('edit-active', on);
   if (!on) document.getElementById('widget-mgr-dropdown').style.display = 'none';
 }
 

@@ -190,6 +190,7 @@ body {
   white-space: nowrap;
 }
 
+.dash-header.edit-active .contact-fab { display: none; }
 .contact-fab:hover {
   background: #4f8ef7;
   transform: translateY(-1px);
