@@ -1538,7 +1538,7 @@ function applyWidgetLayout() {
     w.style.left   = s.left   + 'px';
     w.style.width  = s.width  + 'px';
     w.style.height = s.height + 'px';
-    if (s.hidden) w.classList.add('widget-hidden');
+    w.classList.toggle('widget-hidden', !!s.hidden);
   });
   updateWidgetAreaHeight();
 }
