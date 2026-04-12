@@ -1758,6 +1758,7 @@ let memoDrawing = false;
 let memoLastPos = null;
 let memoTool   = { color: '#1a1a2e', size: 3, eraser: false };
 let memoCombinedSubMode = 'text'; // 'text' | 'draw'
+let memoSaveTarget = 'canvasData'; // initMemoCanvas 시점에 고정: 'canvasData' | 'combinedCanvas'
 
 const MEMO_COLORS = ['#1a1a2e','#e74c3c','#3498db','#27ae60','#f39c12','#9b59b6','#ffffff'];
 const MEMO_SIZES  = [2, 5, 12];
@@ -1772,8 +1773,6 @@ function loadMemoData() {
 }
 
 function saveMemoData() {
-  const tab = memoGetActive();
-  if (tab?.mode === 'draw' && memoCanvas) tab.canvasData = memoCanvas.toDataURL();
   localStorage.setItem(MEMO_KEY, JSON.stringify(memoData));
 }
 
@@ -1856,16 +1855,14 @@ function memoBindDrawTools(cont, tab) {
   document.getElementById('memo-clear')?.addEventListener('click', () => {
     if (!memoCtx || !memoCanvas) return;
     memoCtx.globalCompositeOperation = 'source-over';
-    if (tab.mode === 'combined') {
-      // 오버레이 모드: 투명하게 지워야 텍스트가 보임
+    if (memoSaveTarget === 'combinedCanvas') {
       memoCtx.clearRect(0, 0, memoCanvas.width, memoCanvas.height);
-      tab.combinedCanvas = null;
     } else {
       memoCtx.fillStyle = '#ffffff';
       memoCtx.fillRect(0, 0, memoCanvas.width, memoCanvas.height);
-      tab.canvasData = null;
     }
-    saveMemoData();
+    const t = memoGetActive();
+    if (t) { t[memoSaveTarget] = null; saveMemoData(); }
   });
 }
 
@@ -1954,6 +1951,7 @@ function initMemoCanvas(overlay = false) {
     canvas.width  = w;
     canvas.height = h;
     memoCanvas = canvas; memoCtx = canvas.getContext('2d');
+    memoSaveTarget = overlay ? 'combinedCanvas' : 'canvasData'; // 저장 대상 고정
     memoCtx.lineCap = 'round'; memoCtx.lineJoin = 'round';
     if (!overlay) {
       // 흰 배경 (일반 그리기 모드만)
@@ -2004,11 +2002,7 @@ function attachMemoCanvasEvents(canvas) {
   const end = () => {
     if (!memoDrawing) return; memoDrawing = false;
     const tab = memoGetActive();
-    if (tab) {
-      if (tab.mode === 'combined') tab.combinedCanvas = memoCanvas.toDataURL();
-      else                         tab.canvasData     = memoCanvas.toDataURL();
-      saveMemoData();
-    }
+    if (tab) { tab[memoSaveTarget] = memoCanvas.toDataURL(); saveMemoData(); }
   };
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
@@ -2049,8 +2043,7 @@ if (memoWidgetEl && window.ResizeObserver) {
       // (모드 전환 직후엔 memoCanvas가 이전 모드 캔버스를 가리키므로 저장 금지)
       const domCanvas = document.getElementById('memo-canvas');
       if (memoCanvas && memoCanvas === domCanvas) {
-        if (tab.mode === 'combined') tab.combinedCanvas = memoCanvas.toDataURL();
-        else                         tab.canvasData     = memoCanvas.toDataURL();
+        tab[memoSaveTarget] = memoCanvas.toDataURL();
       }
       initMemoCanvas(tab.mode === 'combined');
     }
