@@ -1501,8 +1501,8 @@ const WIDGET_LABELS = {
 // 원래 dash-body 3fr/2fr 그리드 기준 (page-wrapper 960px, padding 36px×2 = widget-area 888px)
 const WIDGET_DEFAULTS = {
   'widget-weather':  { top: 0,   left: 0,   width: 888, height: 175 },
-  'widget-calendar': { top: 199, left: 0,   width: 518, height: 490 },
-  'widget-plans':    { top: 199, left: 542, width: 346, height: 490 },
+  'widget-calendar': { top: 199, left: 0,   width: 518, height: 620 },
+  'widget-plans':    { top: 199, left: 542, width: 346, height: 620 },
 };
 
 function saveWidgetLayout() {
