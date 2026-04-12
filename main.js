@@ -1542,13 +1542,16 @@ function applyWidgetLayout() {
   if (window.innerWidth <= 800) return;
   const saved = loadWidgetLayout();
   document.querySelectorAll('.widget').forEach(w => {
-    const def = WIDGET_DEFAULTS[w.id] || { top: 0, left: 0, width: 300, height: 200 };
-    const s   = saved[w.id] ?? def;
-    w.style.top    = s.top    + 'px';
-    w.style.left   = s.left   + 'px';
-    w.style.width  = s.width  + 'px';
-    w.style.height = s.height + 'px';
-    w.classList.toggle('widget-hidden', !!s.hidden);
+    const def    = WIDGET_DEFAULTS[w.id] || { top: 0, left: 0, width: 300, height: 200 };
+    const s      = saved[w.id];
+    const layout = s ?? def;
+    w.style.top    = layout.top    + 'px';
+    w.style.left   = layout.left   + 'px';
+    w.style.width  = layout.width  + 'px';
+    w.style.height = layout.height + 'px';
+    // 저장된 레이아웃 있으면 hidden 값, 없으면 hiddenByDefault 사용
+    const isHidden = s ? !!s.hidden : !!def.hiddenByDefault;
+    w.classList.toggle('widget-hidden', isHidden);
   });
   updateWidgetAreaHeight();
 }
@@ -1567,16 +1570,37 @@ function updateWidgetAreaHeight() {
 function updateWidgetMgrDropdown() {
   const dropdown = document.getElementById('widget-mgr-dropdown');
   const hidden   = [...document.querySelectorAll('.widget.widget-hidden')];
-  if (!hidden.length) {
+
+  // 시계 위젯은 그룹으로 묶어 하나의 항목으로 표시
+  const hiddenClocks = hidden.filter(w => w.id.startsWith('widget-clock-'));
+  const hiddenOthers = hidden.filter(w => !w.id.startsWith('widget-clock-'));
+
+  const items = [];
+  hiddenOthers.forEach(w => {
+    items.push({ label: `${WIDGET_LABELS[w.id] || w.id} 추가`, widgetId: w.id });
+  });
+  if (hiddenClocks.length > 0) {
+    items.push({ label: '🕐 시계 추가', widgetId: '__clock__' });
+  }
+
+  if (!items.length) {
     dropdown.innerHTML = '<div class="widget-mgr-empty">숨긴 위젯이 없어요</div>';
     return;
   }
-  dropdown.innerHTML = hidden.map(w =>
-    `<button class="widget-mgr-item" data-widget="${w.id}">${WIDGET_LABELS[w.id] || w.id} 추가</button>`
+
+  dropdown.innerHTML = items.map(it =>
+    `<button class="widget-mgr-item" data-widget="${it.widgetId}">${it.label}</button>`
   ).join('');
+
   dropdown.querySelectorAll('.widget-mgr-item').forEach(btn => {
     btn.addEventListener('click', () => {
-      const widget = document.getElementById(btn.dataset.widget);
+      let id = btn.dataset.widget;
+      if (id === '__clock__') {
+        const next = document.querySelector('.widget.widget-hidden[id^="widget-clock-"]');
+        if (!next) return;
+        id = next.id;
+      }
+      const widget = document.getElementById(id);
       if (widget) {
         widget.classList.remove('widget-hidden');
         saveWidgetLayout();

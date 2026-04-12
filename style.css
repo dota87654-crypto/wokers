@@ -2310,6 +2310,7 @@ label {
   width: 100%;
 }
 .clock-tz-select {
+  display: none; /* 편집 모드에서만 표시 */
   width: 100%;
   padding: 4px 8px;
   border: 1px solid #e0e2f0;
@@ -2321,6 +2322,7 @@ label {
   margin-bottom: 8px;
   outline: none;
 }
+.widget-area.edit-mode .clock-tz-select { display: block; }
 .clock-tz-select:hover { border-color: #b0b4e0; }
 .clock-time {
   font-size: 2.6rem;
