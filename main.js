@@ -1549,6 +1549,29 @@ initCalendar();
 initAuth();
 
 // ===================================================
+//  DARK / LIGHT MODE
+// ===================================================
+(function initTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  if (saved === 'dark') document.body.classList.add('dark');
+  updateThemeBtn(saved);
+})();
+
+function updateThemeBtn(theme) {
+  const btn = document.getElementById('theme-toggle-btn');
+  if (!btn) return;
+  btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  btn.title = theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
+}
+
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+  const isDark = document.body.classList.toggle('dark');
+  const theme = isDark ? 'dark' : 'light';
+  localStorage.setItem('theme', theme);
+  updateThemeBtn(theme);
+});
+
+// ===================================================
 //  WIDGET SYSTEM
 // ===================================================
 const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v2';
