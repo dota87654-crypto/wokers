@@ -49,6 +49,7 @@ function handleSession(session) {
     renderTodoList();
     renderIncompletePanel();
     renderCalendar();
+    renderProgressWidget();
   }
 }
 
@@ -65,6 +66,7 @@ function enterGuestMode() {
   renderTodoList();
   renderIncompletePanel();
   renderCalendar();
+  renderProgressWidget();
 }
 
 function exitGuestMode() {
@@ -576,13 +578,13 @@ planModal.addEventListener('click', e => { if (e.target === planModal) closePlan
 async function fetchTodos() {
   if (isGuest) {
     cachedTodos = JSON.parse(localStorage.getItem(GUEST_TODOS_KEY) || '[]');
-    renderTodoList(); renderIncompletePanel(); renderCalendar();
+    renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
     return;
   }
   const { data, error } = await db.from('todos').select('*').order('created_at', { ascending: true });
   if (!error) {
     cachedTodos = data;
-    renderTodoList(); renderIncompletePanel(); renderCalendar();
+    renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
   }
 }
 
@@ -623,6 +625,32 @@ function renderIncompletePanel() {
       ${t.date ? `<span class="incomplete-item-date">${t.date}</span>` : ''}
     </div>`).join('');
   panel.style.display = 'block';
+}
+
+// ---- 오늘 진행률 위젯 ----
+function renderProgressWidget() {
+  const el = document.getElementById('progress-widget-content');
+  if (!el) return;
+  const todayStr = toDateStr(new Date());
+  const todayTodos = cachedTodos.filter(t => t.date === todayStr);
+  if (todayTodos.length === 0) {
+    el.innerHTML = '<div class="progress-empty">오늘 등록된 계획이 없습니다</div>';
+    return;
+  }
+  const done  = todayTodos.filter(t => t.completed).length;
+  const total = todayTodos.length;
+  const pct   = Math.round((done / total) * 100);
+  const isFull = pct === 100;
+  el.innerHTML = `
+    <div class="progress-title-row">
+      <span>오늘 할 일</span>
+      <span class="progress-pct">${pct}%</span>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill${isFull ? ' full' : ''}" style="width:${pct}%"></div>
+    </div>
+    <div class="progress-count-row">완료 ${done}개 / 전체 ${total}개</div>
+  `;
 }
 
 // ---- 할 일 목록 ----
@@ -935,7 +963,7 @@ async function handleAddTodo() {
 
   headlineEl.value = '';
   textEl.value     = '';
-  renderTodoList(); renderIncompletePanel(); renderCalendar();
+  renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
   return true;
 }
 
@@ -943,7 +971,7 @@ async function toggleTodo(id) {
   const todo = cachedTodos.find(t => t.id === id);
   if (!todo) return;
   todo.completed = !todo.completed;
-  renderTodoList(); renderIncompletePanel(); renderCalendar();
+  renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   await db.from('todos').update({ completed: todo.completed }).eq('id', id);
 }
@@ -951,7 +979,7 @@ async function toggleTodo(id) {
 async function deleteTodo(id) {
   cachedTodos = cachedTodos.filter(t => t.id !== id);
   if (editingId === id) editingId = null;
-  renderTodoList(); renderIncompletePanel(); renderCalendar();
+  renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   await db.from('todos').delete().eq('id', id);
 }
@@ -963,7 +991,7 @@ async function editTodo(id, headline, text, date, tagId, time, priority) {
   todo.tag_id = tagId || null; todo.time = time || null;
   todo.priority = priority ?? null;
   editingId = null;
-  renderTodoList(); renderCalendar();
+  renderTodoList(); renderCalendar(); renderProgressWidget();
   if (isGuest) { localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos)); return; }
   const updatePayload = { headline, text, date: date || null, tag_id: tagId || null };
   if (time)                    updatePayload.time     = time;
@@ -1357,7 +1385,7 @@ async function deleteAllVisible() {
   if (!confirm(`현재 목록의 계획 ${visible.length}개를 모두 삭제할까요?`)) return;
   const ids = visible.map(t => t.id);
   cachedTodos = cachedTodos.filter(t => !ids.includes(t.id));
-  renderTodoList(); renderIncompletePanel(); renderCalendar();
+  renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
   if (isGuest) {
     localStorage.setItem(GUEST_TODOS_KEY, JSON.stringify(cachedTodos));
   } else {
@@ -1530,6 +1558,7 @@ const WIDGET_LABELS = {
   'widget-weather':   '🌤 날씨',
   'widget-calendar':  '📅 달력',
   'widget-plans':     '📋 계획 목록',
+  'widget-progress':  '📊 오늘 진행률',
   'widget-memo':      '📝 메모장',
   'widget-pomodoro':  '🍅 뽀모도로',
   'widget-clock-1':   '🕐 시계 1',
@@ -1543,6 +1572,7 @@ const WIDGET_DEFAULTS = {
   'widget-weather':   { top: 0,   left: 0,   width: 888, height: 175 },
   'widget-calendar':  { top: 199, left: 0,   width: 518, height: 620 },
   'widget-plans':     { top: 199, left: 542, width: 346, height: 620 },
+  'widget-progress':  { top: 199, left: 294, width: 244, height: 160, hiddenByDefault: true },
   'widget-memo':      { top: 60,  left: 160, width: 540, height: 500, hiddenByDefault: true },
   'widget-pomodoro':  { top: 199, left: 294, width: 300, height: 360, hiddenByDefault: true },
   'widget-clock-1':   { top: 60,  left: 320, width: 280, height: 180, hiddenByDefault: true },
