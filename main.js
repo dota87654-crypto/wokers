@@ -1553,6 +1553,22 @@ initCalendar();
 initAuth();
 
 // ===================================================
+//  ADMIN MODE (익스텐션 다운로드 버튼 표시)
+//  활성화: 사이트 URL 뒤에 #admin-unlock 붙여서 접속
+//  비활성화: 콘솔에서 localStorage.removeItem('dp_admin') 실행
+// ===================================================
+(function initAdminMode() {
+  if (window.location.hash === '#admin-unlock') {
+    localStorage.setItem('dp_admin', '1');
+    history.replaceState(null, '', window.location.pathname);
+  }
+  if (localStorage.getItem('dp_admin') === '1') {
+    const link = document.getElementById('ext-download-link');
+    if (link) link.style.display = '';
+  }
+})();
+
+// ===================================================
 //  DARK / LIGHT MODE
 // ===================================================
 (function initTheme() {
