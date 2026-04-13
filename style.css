@@ -2186,6 +2186,27 @@ label {
 }
 .site-footer a:hover { text-decoration: underline; }
 
+.ext-download-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: #888 !important;
+  transition: all 0.15s;
+  text-decoration: none !important;
+}
+.ext-download-link:hover {
+  border-color: #4f8ef7;
+  color: #4f8ef7 !important;
+  background: #f0f4ff;
+  text-decoration: none !important;
+}
+body.dark .ext-download-link { border-color: #3a3b56; color: #606080 !important; }
+body.dark .ext-download-link:hover { border-color: #4f8ef7; color: #4f8ef7 !important; background: #1a2040; }
+
 /* ===================================================
    뽀모도로 타이머 위젯
    =================================================== */
