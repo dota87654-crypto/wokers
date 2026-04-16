@@ -2431,6 +2431,25 @@ body.dark .ext-download-link:hover { border-color: #4f8ef7; color: #4f8ef7 !impo
 }
 .theme-toggle-btn:hover { background: #f0f2f8; transform: rotate(20deg); }
 
+.lang-toggle-btn {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 18px;
+  border: 1px solid #ddd;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #555;
+  letter-spacing: 0.03em;
+}
+.lang-toggle-btn:hover { background: #f0f2f8; border-color: #bbb; }
+
 /* ===================================================
    DARK MODE
 =================================================== */
@@ -2453,6 +2472,13 @@ body.dark .theme-toggle-btn {
   color: #d0d0e8;
 }
 body.dark .theme-toggle-btn:hover { background: #2e2f4a; }
+
+body.dark .lang-toggle-btn {
+  background: #23243a;
+  border-color: #3a3b56;
+  color: #d0d0e8;
+}
+body.dark .lang-toggle-btn:hover { background: #2e2f4a; }
 
 /* 로그인 오버레이 */
 body.dark .login-overlay { background: rgba(15,17,23,0.93); }

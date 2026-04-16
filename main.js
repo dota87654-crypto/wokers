@@ -1,4 +1,492 @@
 // ===================================================
+//  I18N — 다국어 지원
+// ===================================================
+const TRANSLATIONS = {
+  ko: {
+    // 헤더
+    streak:              '{0}일 연속 출석',
+    logout:              '로그아웃',
+    guest_mode:          '게스트 모드',
+    login:               '로그인',
+    widget_edit:         '✏ 편집',
+    widget_edit_done:    '✓ 편집 완료',
+    widget_add:          '+ 위젯 추가',
+    widget_reset:        '↺ 초기화',
+    theme_toggle_dark:   '다크 모드로 전환',
+    theme_toggle_light:  '라이트 모드로 전환',
+    contact_btn:         '✉ 문의하기',
+    // 로그인 오버레이
+    login_desc:          '로그인하면 어디서든\n내 계획을 확인할 수 있습니다.',
+    google_login:        'Google로 로그인',
+    or:                  '또는',
+    guest_btn:           '게스트로 이용하기',
+    guest_note:          '게스트 데이터는 이 기기에만 저장됩니다',
+    // 위젯 제목
+    widget_weather:      '🌤 날씨',
+    widget_calendar:     '📅 달력',
+    widget_plans:        '📋 계획 목록',
+    widget_clock:        '🕐 시계',
+    widget_progress:     '📊 오늘 진행률',
+    widget_pomodoro:     '🍅 뽀모도로',
+    widget_memo:         '📝 메모장',
+    // 달력
+    days_short:          ['일','월','화','수','목','금','토'],
+    months:              ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+    today:               '오늘',
+    cal_add:             '+ 계획 등록',
+    cal_more:            '+{0} 더',
+    cal_title:           '{0}년 {1}월',
+    // 날짜 표시
+    date_display:        '{0}년 {1}월 {2}일 ({3})',
+    plan_modal_date:     '{0}년 {1}월 {2}일 ({3})',
+    // 계획 목록
+    plans_title:         '계획 목록',
+    select_mode:         '선택하기',
+    sort_datetime:       '⇅ 날짜+시간순',
+    sort_priority:       '⇅ 우선순위순',
+    sort_created:        '⇅ 등록순',
+    delete_all:          '전체 삭제',
+    filter_all:          '전체',
+    filter_incomplete:   '미완료',
+    filter_complete:     '완료',
+    filter_today:        '오늘',
+    filter_future:       '미래',
+    select_all:          '전체 선택',
+    n_selected:          '{0}개 선택',
+    delete:              '삭제',
+    cancel:              '취소',
+    no_title:            '(제목 없음)',
+    no_plans:            '등록된 계획이 없습니다.',
+    edit_item:           '수정',
+    delete_item:         '삭제',
+    save:                '저장',
+    time_undecided:      '시간 미정',
+    time_undecided_badge:'🕐 시간 미정',
+    priority_tbd:        '미정',
+    incomplete_title:    '⚠ 미완료 계획',
+    // 진행률
+    no_today_plans:      '오늘 등록된 계획이 없습니다',
+    today_tasks:         '오늘 할 일',
+    progress_count:      '완료 {0}개 / 전체 {1}개',
+    // 계획 등록 모달
+    modal_add_plan:      '계획 등록',
+    label_title:         '제목',
+    placeholder_title:   '계획 제목을 입력하세요',
+    label_content:       '내용',
+    optional:            '(선택)',
+    placeholder_content: '상세 내용을 입력하세요',
+    label_start_date:    '시작 날짜',
+    label_time:          '시간',
+    label_priority:      '우선순위',
+    label_tag:           '태그',
+    tag_manage_link:     '+ 태그 관리',
+    repeat_plan:         '반복 계획',
+    repeat_period:       '반복 주기',
+    repeat_daily:        '매일',
+    repeat_3days:        '3일',
+    repeat_weekly:       '매주',
+    repeat_monthly:      '매달',
+    repeat_3months:      '3개월',
+    repeat_6months:      '반년',
+    repeat_custom:       '임의',
+    repeat_interval:     '반복 간격',
+    repeat_interval_sfx: '일마다',
+    repeat_end_date:     '반복 종료일',
+    add_btn:             '추가하기',
+    adding_n:            '{0}개 등록 중...',
+    alert_no_start:      '시작 날짜를 선택해주세요.',
+    alert_no_end:        '반복 종료일을 선택해주세요.',
+    alert_end_before:    '종료일이 시작일보다 이전입니다.',
+    alert_no_items:      '생성할 계획이 없습니다.',
+    preview_n:           '총 {0}개 계획이 등록됩니다.',
+    preview_end_before:  '종료일이 시작일보다 이전입니다.',
+    // 태그
+    tag_manage_title:    '태그 관리',
+    no_tags:             '아직 태그가 없습니다.',
+    new_tag_name:        '새 태그 이름',
+    tag_name_ph:         '태그 이름 입력',
+    color_select:        '색상 선택',
+    add_tag:             '태그 추가',
+    tag_none:            '없음',
+    tag_filter_all:      '전체',
+    // 문의 모달
+    contact_title:       '제휴 문의',
+    contact_subtitle:    '아래 양식을 작성해 주시면 빠르게 연락드리겠습니다.',
+    success_title:       '문의가 접수되었습니다!',
+    success_desc:        '빠른 시일 내로 회신 드리겠습니다.',
+    close:               '닫기',
+    label_name:          '이름 / 회사명',
+    ph_name:             '홍길동 / (주)회사명',
+    label_email:         '이메일',
+    label_phone:         '연락처',
+    ph_phone:            '010-0000-0000',
+    label_type:          '문의 유형',
+    type_ph:             '선택해 주세요',
+    type_ad:             '광고 / 마케팅',
+    type_content:        '콘텐츠 제휴',
+    type_tech:           '기술 협력',
+    type_other:          '기타',
+    label_message:       '문의 내용',
+    ph_message:          '문의 내용을 입력해 주세요.',
+    submit:              '문의 보내기',
+    submitting:          '전송 중...',
+    rate_limit:          '하루 최대 3건까지만 문의할 수 있습니다. 내일 다시 시도해 주세요.',
+    send_failed:         '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+    network_error:       '네트워크 오류가 발생했습니다.',
+    // 날씨
+    weather_loading:     '📍 위치 정보를 가져오는 중...',
+    current_location:    '현재 위치',
+    search_city:         '다른 지역 검색',
+    fav_add:             '즐겨찾기에 추가',
+    fav_remove:          '즐겨찾기에서 제거',
+    favorites:           '즐겨찾기',
+    wind:                '바람 {0} km/h',
+    city_search_ph:      '도시 이름 입력 (예: 부산, Tokyo, New York)',
+    search:              '검색',
+    no_geo:              '위치 정보를 지원하지 않습니다.',
+    no_geo_ph:           '도시 이름으로 검색하세요',
+    no_perm:             '위치 권한이 없습니다.<br>도시를 직접 검색해보세요.',
+    no_perm_ph:          '도시 이름 입력 (예: 서울, 부산)',
+    weather_error:       '날씨 정보를 불러올 수 없습니다.',
+    search_error:        '검색 중 오류가 발생했습니다.',
+    fav_empty:           '☆ 버튼으로 즐겨찾는 지역을 추가하세요.',
+    unknown_weather:     '알 수 없음',
+    // 위젯 시스템
+    widget_no_hidden:    '숨긴 위젯이 없어요',
+    widget_add_suffix:   ' 추가',
+    widget_clock_add:    '🕐 시계 추가',
+    reset_confirm:       '위젯 배치를 기본값으로 초기화할까요?',
+    // 선택 삭제
+    del_selected:        '{0}개의 계획을 삭제할까요?',
+    del_all:             '현재 목록의 계획 {0}개를 모두 삭제할까요?',
+    // 메모
+    memo_default:        '메모 1',
+    memo_tab_n:          '메모 {0}',
+    memo_mode_text:      '✏ 텍스트',
+    memo_mode_draw:      '🖌 그리기',
+    memo_mode_combined:  '✏🖌 같이쓰기',
+    memo_sub_text:       '✏ 텍스트 편집',
+    memo_sub_draw:       '🖌 그리기',
+    memo_eraser:         '🧹 지우개',
+    memo_clear:          '🗑 전체',
+    memo_ph:             '메모를 입력하세요...',
+    memo_rename:         '탭 이름 변경:',
+    memo_last_tab:       '마지막 탭은 삭제할 수 없어요.',
+    // 뽀모도로
+    pomo_focus:          '🍅 집중',
+    pomo_break:          '☕ 휴식',
+    pomo_longbreak:      '🌙 긴 휴식',
+    pomo_pause:          '⏸ 일시정지',
+    pomo_start:          '▶ 시작',
+    pomo_skip_title:     '다음 단계로',
+    pomo_reset_title:    '초기화',
+    pomo_mute_off:       '알람 끄기',
+    pomo_mute_on:        '알람 켜기',
+    pomo_focus_lbl:      '집중',
+    pomo_break_lbl:      '휴식',
+    pomo_min:            '분',
+    pomo_notify_focus:   '🍅 집중 시간을 시작하세요!',
+    pomo_notify_break:   '☕ 잠깐 쉬어가세요!',
+    pomo_notify_long:    '🌙 긴 휴식 시간입니다!',
+    pomo_notify_title:   '뽀모도로',
+    // 시계 타임존
+    tz_korea:      '🇰🇷 한국',
+    tz_japan:      '🇯🇵 일본',
+    tz_china:      '🇨🇳 중국',
+    tz_singapore:  '🇸🇬 싱가포르',
+    tz_india:      '🇮🇳 인도',
+    tz_dubai:      '🇦🇪 두바이',
+    tz_russia:     '🇷🇺 러시아(모스크바)',
+    tz_uk:         '🇬🇧 영국',
+    tz_germany:    '🇩🇪 독일',
+    tz_france:     '🇫🇷 프랑스',
+    tz_us_east:    '🇺🇸 미국 동부',
+    tz_us_west:    '🇺🇸 미국 서부',
+    tz_brazil:     '🇧🇷 브라질',
+    tz_australia:  '🇦🇺 호주(시드니)',
+    tz_newzealand: '🇳🇿 뉴질랜드',
+    // 푸터
+    privacy:       '개인정보처리방침',
+    ext_download:  '🧩 크롬 익스텐션 다운로드',
+  },
+  en: {
+    // Header
+    streak:              '{0}-day streak 🔥',
+    logout:              'Logout',
+    guest_mode:          'Guest Mode',
+    login:               'Login',
+    widget_edit:         '✏ Edit',
+    widget_edit_done:    '✓ Done',
+    widget_add:          '+ Add Widget',
+    widget_reset:        '↺ Reset',
+    theme_toggle_dark:   'Switch to dark mode',
+    theme_toggle_light:  'Switch to light mode',
+    contact_btn:         '✉ Contact',
+    // Login overlay
+    login_desc:          'Log in to access your plans\nfrom anywhere.',
+    google_login:        'Sign in with Google',
+    or:                  'or',
+    guest_btn:           'Continue as Guest',
+    guest_note:          'Guest data is saved on this device only',
+    // Widget titles
+    widget_weather:      '🌤 Weather',
+    widget_calendar:     '📅 Calendar',
+    widget_plans:        '📋 Plans',
+    widget_clock:        '🕐 Clock',
+    widget_progress:     '📊 Today\'s Progress',
+    widget_pomodoro:     '🍅 Pomodoro',
+    widget_memo:         '📝 Memo',
+    // Calendar
+    days_short:          ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+    months:              ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    today:               'Today',
+    cal_add:             '+ Add Plan',
+    cal_more:            '+{0} more',
+    cal_title:           '{1} {0}',
+    // Date display (args: year, month, day, dow)
+    date_display:        '{1}/{2}/{0} ({3})',
+    plan_modal_date:     '{1}/{2}/{0} ({3})',
+    // Plans
+    plans_title:         'Plans',
+    select_mode:         'Select',
+    sort_datetime:       '⇅ Date & Time',
+    sort_priority:       '⇅ Priority',
+    sort_created:        '⇅ Created',
+    delete_all:          'Delete All',
+    filter_all:          'All',
+    filter_incomplete:   'Incomplete',
+    filter_complete:     'Done',
+    filter_today:        'Today',
+    filter_future:       'Future',
+    select_all:          'Select All',
+    n_selected:          '{0} selected',
+    delete:              'Delete',
+    cancel:              'Cancel',
+    no_title:            '(No title)',
+    no_plans:            'No plans yet.',
+    edit_item:           'Edit',
+    delete_item:         'Delete',
+    save:                'Save',
+    time_undecided:      'Time TBD',
+    time_undecided_badge:'🕐 Time TBD',
+    priority_tbd:        'TBD',
+    incomplete_title:    '⚠ Incomplete Plans',
+    // Progress
+    no_today_plans:      'No plans for today',
+    today_tasks:         'Today\'s Tasks',
+    progress_count:      '{0} / {1} completed',
+    // Add plan modal
+    modal_add_plan:      'Add Plan',
+    label_title:         'Title',
+    placeholder_title:   'Enter plan title',
+    label_content:       'Content',
+    optional:            '(optional)',
+    placeholder_content: 'Enter details',
+    label_start_date:    'Start Date',
+    label_time:          'Time',
+    label_priority:      'Priority',
+    label_tag:           'Tag',
+    tag_manage_link:     '+ Manage Tags',
+    repeat_plan:         'Repeat',
+    repeat_period:       'Repeat Period',
+    repeat_daily:        'Daily',
+    repeat_3days:        '3 Days',
+    repeat_weekly:       'Weekly',
+    repeat_monthly:      'Monthly',
+    repeat_3months:      '3 Months',
+    repeat_6months:      '6 Months',
+    repeat_custom:       'Custom',
+    repeat_interval:     'Repeat Interval',
+    repeat_interval_sfx: 'days',
+    repeat_end_date:     'End Date',
+    add_btn:             'Add',
+    adding_n:            'Adding {0}...',
+    alert_no_start:      'Please select a start date.',
+    alert_no_end:        'Please select an end date.',
+    alert_end_before:    'End date is before start date.',
+    alert_no_items:      'No plans to create.',
+    preview_n:           '{0} plans will be added.',
+    preview_end_before:  'End date is before start date.',
+    // Tags
+    tag_manage_title:    'Manage Tags',
+    no_tags:             'No tags yet.',
+    new_tag_name:        'New tag name',
+    tag_name_ph:         'Enter tag name',
+    color_select:        'Choose Color',
+    add_tag:             'Add Tag',
+    tag_none:            'None',
+    tag_filter_all:      'All',
+    // Contact modal
+    contact_title:       'Contact Us',
+    contact_subtitle:    'Fill out the form below and we\'ll get back to you.',
+    success_title:       'Message sent!',
+    success_desc:        'We\'ll get back to you soon.',
+    close:               'Close',
+    label_name:          'Name / Company',
+    ph_name:             'John Doe / Company Ltd.',
+    label_email:         'Email',
+    label_phone:         'Phone',
+    ph_phone:            '+1-000-000-0000',
+    label_type:          'Inquiry Type',
+    type_ph:             'Please select',
+    type_ad:             'Advertising / Marketing',
+    type_content:        'Content Partnership',
+    type_tech:           'Technical Collaboration',
+    type_other:          'Other',
+    label_message:       'Message',
+    ph_message:          'Enter your message.',
+    submit:              'Send Message',
+    submitting:          'Sending...',
+    rate_limit:          'You can only send 3 messages per day. Try again tomorrow.',
+    send_failed:         'Failed to send. Please try again later.',
+    network_error:       'A network error occurred.',
+    // Weather
+    weather_loading:     '📍 Getting your location...',
+    current_location:    'Current Location',
+    search_city:         'Search another city',
+    fav_add:             'Add to favorites',
+    fav_remove:          'Remove from favorites',
+    favorites:           'Favorites',
+    wind:                'Wind {0} km/h',
+    city_search_ph:      'Enter city name (e.g. London, Tokyo, New York)',
+    search:              'Search',
+    no_geo:              'Geolocation is not supported.',
+    no_geo_ph:           'Search by city name',
+    no_perm:             'Location permission denied.<br>Search for a city manually.',
+    no_perm_ph:          'Enter city name (e.g. London, Paris)',
+    weather_error:       'Could not load weather data.',
+    search_error:        'An error occurred during search.',
+    fav_empty:           'Use ☆ to save your favorite locations.',
+    unknown_weather:     'Unknown',
+    // Widget system
+    widget_no_hidden:    'No hidden widgets',
+    widget_add_suffix:   ' Add',
+    widget_clock_add:    '🕐 Add Clock',
+    reset_confirm:       'Reset widget layout to defaults?',
+    // Delete confirms
+    del_selected:        'Delete {0} plans?',
+    del_all:             'Delete all {0} plans in the current view?',
+    // Memo
+    memo_default:        'Memo 1',
+    memo_tab_n:          'Memo {0}',
+    memo_mode_text:      '✏ Text',
+    memo_mode_draw:      '🖌 Draw',
+    memo_mode_combined:  '✏🖌 Combined',
+    memo_sub_text:       '✏ Edit Text',
+    memo_sub_draw:       '🖌 Draw',
+    memo_eraser:         '🧹 Eraser',
+    memo_clear:          '🗑 Clear All',
+    memo_ph:             'Enter your memo...',
+    memo_rename:         'Rename tab:',
+    memo_last_tab:       'Cannot delete the last tab.',
+    // Pomodoro
+    pomo_focus:          '🍅 Focus',
+    pomo_break:          '☕ Break',
+    pomo_longbreak:      '🌙 Long Break',
+    pomo_pause:          '⏸ Pause',
+    pomo_start:          '▶ Start',
+    pomo_skip_title:     'Next',
+    pomo_reset_title:    'Reset',
+    pomo_mute_off:       'Mute alarm',
+    pomo_mute_on:        'Unmute alarm',
+    pomo_focus_lbl:      'Focus',
+    pomo_break_lbl:      'Break',
+    pomo_min:            'min',
+    pomo_notify_focus:   '🍅 Time to focus!',
+    pomo_notify_break:   '☕ Take a break!',
+    pomo_notify_long:    '🌙 Long break time!',
+    pomo_notify_title:   'Pomodoro',
+    // Timezones
+    tz_korea:      '🇰🇷 Korea',
+    tz_japan:      '🇯🇵 Japan',
+    tz_china:      '🇨🇳 China',
+    tz_singapore:  '🇸🇬 Singapore',
+    tz_india:      '🇮🇳 India',
+    tz_dubai:      '🇦🇪 Dubai',
+    tz_russia:     '🇷🇺 Russia (Moscow)',
+    tz_uk:         '🇬🇧 UK',
+    tz_germany:    '🇩🇪 Germany',
+    tz_france:     '🇫🇷 France',
+    tz_us_east:    '🇺🇸 US East',
+    tz_us_west:    '🇺🇸 US West',
+    tz_brazil:     '🇧🇷 Brazil',
+    tz_australia:  '🇦🇺 Australia (Sydney)',
+    tz_newzealand: '🇳🇿 New Zealand',
+    // Footer
+    privacy:       'Privacy Policy',
+    ext_download:  '🧩 Download Chrome Extension',
+  },
+};
+
+let currentLang = (() => {
+  const saved = localStorage.getItem('dp_lang');
+  if (saved) return saved;
+  const browser = (navigator.language || navigator.userLanguage || 'ko').toLowerCase();
+  return browser.startsWith('ko') ? 'ko' : 'en';
+})();
+
+function t(key, ...args) {
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.ko;
+  let str = dict[key];
+  if (str === undefined) str = (TRANSLATIONS.ko)[key];
+  if (str === undefined) return key;
+  if (Array.isArray(str)) return str;
+  args.forEach((a, i) => { str = str.replace(new RegExp(`\\{${i}\\}`, 'g'), String(a)); });
+  return str;
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    el.innerHTML = t(el.dataset.i18nHtml);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
+  // 언어 토글 버튼
+  const langBtn = document.getElementById('lang-toggle-btn');
+  if (langBtn) langBtn.textContent = currentLang === 'ko' ? 'EN' : '한';
+  // HTML lang 속성
+  document.getElementById('html-root')?.setAttribute('lang', currentLang === 'ko' ? 'ko' : 'en');
+  // 달력 요일 헤더
+  const weekdayEl = document.getElementById('cal-weekdays');
+  if (weekdayEl) {
+    const days = t('days_short');
+    const spans = weekdayEl.querySelectorAll('span');
+    spans.forEach((sp, i) => { sp.textContent = days[i]; });
+  }
+  // 로그인 설명문 (줄바꿈 포함)
+  const loginDesc = document.getElementById('login-desc');
+  if (loginDesc) loginDesc.innerHTML = t('login_desc').replace(/\n/g, '<br>');
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('dp_lang', lang);
+  applyTranslations();
+  // 동적 렌더링 갱신
+  initDateDisplay();
+  if (_cachedWeatherData && _weatherLat !== null) {
+    renderWeatherUI(_cachedWeatherData, _weatherCity);
+  }
+  renderCalendar();
+  renderTodoList();
+  renderIncompletePanel();
+  renderProgressWidget();
+  renderPomoTimer();
+  updateThemeBtn(document.body.classList.contains('dark') ? 'dark' : 'light');
+  renderMemoContent();
+  renderTagFilter();
+  renderTagSelector('tag-selector', selectedTagId, id => { selectedTagId = id; });
+}
+
+// ===================================================
 //  SUPABASE SETUP
 // ===================================================
 const SUPABASE_URL = 'https://wtrastebtdlkusmgkwyj.supabase.co';
@@ -135,8 +623,7 @@ async function checkAttendanceAndStreak() {
   const streak = calcStreak(dates, today);
 
   const badge = document.getElementById('streak-badge');
-  const count  = document.getElementById('streak-count');
-  count.textContent = streak;
+  badge.innerHTML = t('streak', streak);
   badge.style.display = 'flex';
 }
 
@@ -165,42 +652,117 @@ function calcStreak(dates, today) {
 // ===================================================
 //  날짜 표시
 // ===================================================
-(function initDate() {
-  const days = ['일','월','화','수','목','금','토'];
+function initDateDisplay() {
   const now  = new Date();
+  const days = t('days_short');
   document.getElementById('dash-date').textContent =
-    `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
-})();
+    t('date_display', now.getFullYear(), now.getMonth()+1, now.getDate(), days[now.getDay()]);
+}
+initDateDisplay();
 
 // ===================================================
 //  날씨
 // ===================================================
+const WMO_TEXT = {
+  ko: {
+    0:'맑음', 1:'대체로 맑음', 2:'구름 조금', 3:'흐림',
+    45:'안개', 48:'결빙 안개',
+    51:'가벼운 이슬비', 53:'이슬비', 55:'강한 이슬비',
+    61:'가벼운 비', 63:'비', 65:'강한 비',
+    71:'가벼운 눈', 73:'눈', 75:'강한 눈',
+    80:'소나기', 81:'강한 소나기', 82:'폭우',
+    95:'뇌우', 99:'강한 우박 뇌우',
+  },
+  en: {
+    0:'Clear sky', 1:'Mainly clear', 2:'Partly cloudy', 3:'Overcast',
+    45:'Fog', 48:'Icy fog',
+    51:'Light drizzle', 53:'Drizzle', 55:'Heavy drizzle',
+    61:'Light rain', 63:'Rain', 65:'Heavy rain',
+    71:'Light snow', 73:'Snow', 75:'Heavy snow',
+    80:'Showers', 81:'Heavy showers', 82:'Violent showers',
+    95:'Thunderstorm', 99:'Heavy hail storm',
+  },
+};
+
+function getWmoText(code) {
+  return (WMO_TEXT[currentLang] || WMO_TEXT.ko)[code] || t('unknown_weather');
+}
+
 const WMO = {
-  0:  { text:'맑음',           icon:'☀️',  bg:'linear-gradient(135deg,#f7971e,#ffd200)' },
-  1:  { text:'대체로 맑음',    icon:'🌤️', bg:'linear-gradient(135deg,#f7971e,#ffd200)' },
-  2:  { text:'구름 조금',      icon:'⛅',  bg:'linear-gradient(135deg,#667eea,#764ba2)' },
-  3:  { text:'흐림',           icon:'☁️',  bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
-  45: { text:'안개',           icon:'🌫️', bg:'linear-gradient(135deg,#757f9a,#d7dde8)' },
-  48: { text:'결빙 안개',      icon:'🌫️', bg:'linear-gradient(135deg,#757f9a,#d7dde8)' },
-  51: { text:'가벼운 이슬비',  icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
-  53: { text:'이슬비',         icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
-  55: { text:'강한 이슬비',    icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
-  61: { text:'가벼운 비',      icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
-  63: { text:'비',             icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
-  65: { text:'강한 비',        icon:'🌧️', bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
-  71: { text:'가벼운 눈',      icon:'🌨️', bg:'linear-gradient(135deg,#89cff0,#6190b0)' },
-  73: { text:'눈',             icon:'❄️',  bg:'linear-gradient(135deg,#89cff0,#6190b0)' },
-  75: { text:'강한 눈',        icon:'❄️',  bg:'linear-gradient(135deg,#667db6,#0082c8)' },
-  80: { text:'소나기',         icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
-  81: { text:'강한 소나기',    icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
-  82: { text:'폭우',           icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
-  95: { text:'뇌우',           icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
-  99: { text:'강한 우박 뇌우', icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
+  0:  { get text(){ return getWmoText(0);  }, icon:'☀️',  bg:'linear-gradient(135deg,#f7971e,#ffd200)' },
+  1:  { get text(){ return getWmoText(1);  }, icon:'🌤️', bg:'linear-gradient(135deg,#f7971e,#ffd200)' },
+  2:  { get text(){ return getWmoText(2);  }, icon:'⛅',  bg:'linear-gradient(135deg,#667eea,#764ba2)' },
+  3:  { get text(){ return getWmoText(3);  }, icon:'☁️',  bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
+  45: { get text(){ return getWmoText(45); }, icon:'🌫️', bg:'linear-gradient(135deg,#757f9a,#d7dde8)' },
+  48: { get text(){ return getWmoText(48); }, icon:'🌫️', bg:'linear-gradient(135deg,#757f9a,#d7dde8)' },
+  51: { get text(){ return getWmoText(51); }, icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
+  53: { get text(){ return getWmoText(53); }, icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
+  55: { get text(){ return getWmoText(55); }, icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
+  61: { get text(){ return getWmoText(61); }, icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
+  63: { get text(){ return getWmoText(63); }, icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
+  65: { get text(){ return getWmoText(65); }, icon:'🌧️', bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
+  71: { get text(){ return getWmoText(71); }, icon:'🌨️', bg:'linear-gradient(135deg,#89cff0,#6190b0)' },
+  73: { get text(){ return getWmoText(73); }, icon:'❄️',  bg:'linear-gradient(135deg,#89cff0,#6190b0)' },
+  75: { get text(){ return getWmoText(75); }, icon:'❄️',  bg:'linear-gradient(135deg,#667db6,#0082c8)' },
+  80: { get text(){ return getWmoText(80); }, icon:'🌦️', bg:'linear-gradient(135deg,#4b6cb7,#182848)' },
+  81: { get text(){ return getWmoText(81); }, icon:'🌧️', bg:'linear-gradient(135deg,#2c3e50,#4ca1af)' },
+  82: { get text(){ return getWmoText(82); }, icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
+  95: { get text(){ return getWmoText(95); }, icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
+  99: { get text(){ return getWmoText(99); }, icon:'⛈️',  bg:'linear-gradient(135deg,#1a1a2e,#16213e)' },
 };
 
 let _weatherLat = null;
 let _weatherLon = null;
 let _weatherCity = '';
+let _cachedWeatherData = null;
+
+function renderWeatherUI(wData, city) {
+  const el = document.getElementById('dash-weather');
+  if (!el || !wData) return;
+  const cw  = wData.current_weather;
+  const wmo = WMO[cw.weathercode] || { text: t('unknown_weather'), icon:'🌡️', bg:'linear-gradient(135deg,#667eea,#764ba2)' };
+  el.style.background = wmo.bg;
+
+  const days  = t('days_short');
+  const daily = wData.daily;
+  const weeklyHtml = daily ? daily.time.map((dateStr, i) => {
+    const d       = new Date(dateStr + 'T00:00:00');
+    const dayName = i === 0 ? t('today') : days[d.getDay()];
+    const dWmo    = WMO[daily.weathercode[i]] || { icon:'🌡️' };
+    return `<div class="wdc">
+      <div class="wdc-day">${dayName}</div>
+      <div class="wdc-icon">${dWmo.icon}</div>
+      <div class="wdc-max">${Math.round(daily.temperature_2m_max[i])}°</div>
+      <div class="wdc-min">${Math.round(daily.temperature_2m_min[i])}°</div>
+    </div>`;
+  }).join('') : '';
+
+  el.innerHTML = `
+    <div class="weather-top">
+      <div class="weather-current">
+        <div class="weather-icon">${wmo.icon}</div>
+        <div class="weather-info">
+          <div class="weather-city-row">
+            <span class="weather-city">📍 ${city}</span>
+            <button class="weather-search-toggle" id="weather-search-toggle" title="${t('search_city')}">🔍</button>
+            <button class="weather-fav-save" id="weather-fav-save" title="${t('fav_add')}">☆</button>
+            <button class="weather-fav-toggle" id="weather-fav-toggle" title="${t('favorites')}">${t('favorites')}</button>
+          </div>
+          <div class="weather-temp">${Math.round(cw.temperature)}°C</div>
+          <div class="weather-desc">${wmo.text}</div>
+          <div class="weather-wind">${t('wind', cw.windspeed)}</div>
+        </div>
+      </div>
+      <div class="weather-weekly">${weeklyHtml}</div>
+    </div>
+    <div class="weather-search-row" id="weather-search-row" style="display:none;">
+      <input type="text" id="weather-city-input" class="weather-city-input" placeholder="${t('city_search_ph')}" autocomplete="off" />
+      <button class="weather-search-btn" id="weather-search-btn">${t('search')}</button>
+    </div>
+    <div class="weather-fav-row" id="weather-fav-row" style="display:none;"></div>`;
+
+  attachWeatherSearchEvents();
+}
 
 async function fetchAndRenderWeather(lat, lon, cityName) {
   const el = document.getElementById('dash-weather');
@@ -217,56 +779,15 @@ async function fetchAndRenderWeather(lat, lon, cityName) {
     let city = cityName;
     if (!city && results[1]) {
       const gData = await results[1].json();
-      city = gData.address?.city || gData.address?.town || gData.address?.county || '현재 위치';
+      city = gData.address?.city || gData.address?.town || gData.address?.county || t('current_location');
     }
 
     _weatherLat = lat; _weatherLon = lon; _weatherCity = city;
+    _cachedWeatherData = wData;
 
-    const cw  = wData.current_weather;
-    const wmo = WMO[cw.weathercode] || { text:'알 수 없음', icon:'🌡️', bg:'linear-gradient(135deg,#667eea,#764ba2)' };
-    el.style.background = wmo.bg;
-
-    const days  = ['일','월','화','수','목','금','토'];
-    const daily = wData.daily;
-    const weeklyHtml = daily ? daily.time.map((dateStr, i) => {
-      const d       = new Date(dateStr + 'T00:00:00');
-      const dayName = i === 0 ? '오늘' : days[d.getDay()];
-      const dWmo    = WMO[daily.weathercode[i]] || { icon:'🌡️' };
-      return `<div class="wdc">
-        <div class="wdc-day">${dayName}</div>
-        <div class="wdc-icon">${dWmo.icon}</div>
-        <div class="wdc-max">${Math.round(daily.temperature_2m_max[i])}°</div>
-        <div class="wdc-min">${Math.round(daily.temperature_2m_min[i])}°</div>
-      </div>`;
-    }).join('') : '';
-
-    el.innerHTML = `
-      <div class="weather-top">
-        <div class="weather-current">
-          <div class="weather-icon">${wmo.icon}</div>
-          <div class="weather-info">
-            <div class="weather-city-row">
-              <span class="weather-city">📍 ${city}</span>
-              <button class="weather-search-toggle" id="weather-search-toggle" title="다른 지역 검색">🔍</button>
-              <button class="weather-fav-save" id="weather-fav-save" title="즐겨찾기에 추가">☆</button>
-              <button class="weather-fav-toggle" id="weather-fav-toggle" title="즐겨찾기 목록">즐겨찾기</button>
-            </div>
-            <div class="weather-temp">${Math.round(cw.temperature)}°C</div>
-            <div class="weather-desc">${wmo.text}</div>
-            <div class="weather-wind">바람 ${cw.windspeed} km/h</div>
-          </div>
-        </div>
-        <div class="weather-weekly">${weeklyHtml}</div>
-      </div>
-      <div class="weather-search-row" id="weather-search-row" style="display:none;">
-        <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름 입력 (예: 부산, Tokyo, New York)" autocomplete="off" />
-        <button class="weather-search-btn" id="weather-search-btn">검색</button>
-      </div>
-      <div class="weather-fav-row" id="weather-fav-row" style="display:none;"></div>`;
-
-    attachWeatherSearchEvents();
+    renderWeatherUI(wData, city);
   } catch {
-    el.innerHTML = '<span class="weather-error">날씨 정보를 불러올 수 없습니다.</span>';
+    el.innerHTML = `<span class="weather-error">${t('weather_error')}</span>`;
   }
 }
 
@@ -295,7 +816,7 @@ async function searchCityWeather() {
     await fetchAndRenderWeather(parseFloat(lat), parseFloat(lon), city);
   } catch {
     input.disabled = false;
-    el.innerHTML = '<span class="weather-error">검색 중 오류가 발생했습니다.</span>';
+    el.innerHTML = `<span class="weather-error">${t('search_error')}</span>`;
   }
 }
 
@@ -330,7 +851,7 @@ function updateFavSaveBtn() {
   if (!btn) return;
   const saved = isFavorite(_weatherCity);
   btn.textContent = saved ? '★' : '☆';
-  btn.title = saved ? '즐겨찾기에서 제거' : '즐겨찾기에 추가';
+  btn.title = saved ? t('fav_remove') : t('fav_add');
   btn.classList.toggle('saved', saved);
 }
 
@@ -339,7 +860,7 @@ function renderFavRow() {
   if (!row) return;
   const favs = getFavorites();
   if (!favs.length) {
-    row.innerHTML = '<span class="weather-fav-empty">☆ 버튼으로 즐겨찾는 지역을 추가하세요.</span>';
+    row.innerHTML = `<span class="weather-fav-empty">${t('fav_empty')}</span>`;
     return;
   }
   row.innerHTML = favs.map((f, i) => `
@@ -404,10 +925,10 @@ function loadWeather() {
   if (!navigator.geolocation) {
     el.style.background = 'linear-gradient(135deg,#4b6cb7,#182848)';
     el.innerHTML = `<div class="weather-no-location">
-      <div class="weather-desc">위치 정보를 지원하지 않습니다.</div>
+      <div class="weather-desc">${t('no_geo')}</div>
       <div class="weather-search-row" style="display:flex;margin-top:12px;">
-        <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름으로 검색하세요" autocomplete="off" />
-        <button class="weather-search-btn" id="weather-search-btn">검색</button>
+        <input type="text" id="weather-city-input" class="weather-city-input" placeholder="${t('no_geo_ph')}" autocomplete="off" />
+        <button class="weather-search-btn" id="weather-search-btn">${t('search')}</button>
       </div>
     </div>`;
     attachWeatherSearchEvents();
@@ -418,10 +939,10 @@ function loadWeather() {
     () => {
       el.style.background = 'linear-gradient(135deg,#4b6cb7,#182848)';
       el.innerHTML = `<div class="weather-no-location">
-        <div class="weather-desc" style="margin-bottom:12px;">위치 권한이 없습니다.<br>도시를 직접 검색해보세요.</div>
+        <div class="weather-desc" style="margin-bottom:12px;">${t('no_perm')}</div>
         <div class="weather-search-row" style="display:flex;">
-          <input type="text" id="weather-city-input" class="weather-city-input" placeholder="도시 이름 입력 (예: 서울, 부산)" autocomplete="off" />
-          <button class="weather-search-btn" id="weather-search-btn">검색</button>
+          <input type="text" id="weather-city-input" class="weather-city-input" placeholder="${t('no_perm_ph')}" autocomplete="off" />
+          <button class="weather-search-btn" id="weather-search-btn">${t('search')}</button>
         </div>
       </div>`;
       attachWeatherSearchEvents();
@@ -441,14 +962,14 @@ function toDateStr(date) {
 }
 
 // 제목 반환 헬퍼 (기존 데이터 호환)
-function getTodoTitle(todo) { return todo.headline || todo.text || '(제목 없음)'; }
+function getTodoTitle(todo) { return todo.headline || todo.text || t('no_title'); }
 function getTodoContent(todo) { return todo.headline ? (todo.text || '') : ''; }
 
 function renderCalendar() {
   const titleEl = document.getElementById('cal-title');
   const gridEl  = document.getElementById('cal-grid');
 
-  titleEl.textContent = `${calYear}년 ${calMonth + 1}월`;
+  titleEl.textContent = t('cal_title', calYear, calMonth + 1);
 
   // 날짜별 계획 그룹핑
   const byDate = {};
@@ -487,7 +1008,7 @@ function renderCalendar() {
       const fg  = p.completed ? '#fff' : (tag ? getTextColor(tag.color) : '#fff');
       return `<div class="cal-event-item${p.completed ? ' done' : ''}" style="background:${bg};color:${fg};">${escapeHtml(getTodoTitle(p))}</div>`;
     }).join('');
-    const moreHtml = plans.length > 2 ? `<div class="cal-event-more">+${plans.length - 2} 더</div>` : '';
+    const moreHtml = plans.length > 2 ? `<div class="cal-event-more">${t('cal_more', plans.length - 2)}</div>` : '';
 
     html += `<div class="${cls}" data-date="${dateStr}">
       <span class="cal-day-num">${d}</span>
@@ -539,9 +1060,9 @@ const planModalList  = document.getElementById('plan-modal-list');
 
 function openPlanModal(dateStr, plans) {
   const [y, m, d] = dateStr.split('-');
-  const days = ['일','월','화','수','목','금','토'];
+  const days = t('days_short');
   const dow  = new Date(+y, +m-1, +d).getDay();
-  planModalDate.textContent = `${+y}년 ${+m}월 ${+d}일 (${days[dow]})`;
+  planModalDate.textContent = t('plan_modal_date', +y, +m, +d, days[dow]);
 
   planModalList.innerHTML = plans.map(p => `
     <div class="plan-modal-item${p.completed ? ' completed' : ''}" data-id="${p.id}">
@@ -606,7 +1127,7 @@ const PRIORITY_CFG = {
   3: { bg: '#f1c40f', text: '#333',  label: 'P3' },
   4: { bg: '#2ecc71', text: '#fff',  label: 'P4' },
   5: { bg: '#95a5a6', text: '#fff',  label: 'P5' },
-  0: { bg: '#d0d0d0', text: '#777',  label: '미정' },
+  0: { bg: '#d0d0d0', text: '#777',  label: null }, // label은 t()로 동적 처리
 };
 
 function escapeHtml(str) {
@@ -619,14 +1140,18 @@ function escapeHtml(str) {
 function renderIncompletePanel() {
   const panel      = document.getElementById('incomplete-panel');
   const listEl     = document.getElementById('incomplete-list');
-  const incomplete = cachedTodos.filter(t => !t.completed);
+  const incomplete = cachedTodos.filter(td => !td.completed);
   if (incomplete.length === 0) { panel.style.display = 'none'; return; }
 
-  listEl.innerHTML = incomplete.map(t => `
+  // 미완료 패널 제목 갱신
+  const titleEl = panel.querySelector('.incomplete-panel-title');
+  if (titleEl) titleEl.textContent = t('incomplete_title');
+
+  listEl.innerHTML = incomplete.map(td => `
     <div class="incomplete-item">
       <span class="incomplete-dot"></span>
-      <span>${escapeHtml(getTodoTitle(t))}</span>
-      ${t.date ? `<span class="incomplete-item-date">${t.date}</span>` : ''}
+      <span>${escapeHtml(getTodoTitle(td))}</span>
+      ${td.date ? `<span class="incomplete-item-date">${td.date}</span>` : ''}
     </div>`).join('');
   panel.style.display = 'block';
 }
@@ -638,22 +1163,22 @@ function renderProgressWidget() {
   const todayStr = toDateStr(new Date());
   const todayTodos = cachedTodos.filter(t => t.date === todayStr);
   if (todayTodos.length === 0) {
-    el.innerHTML = '<div class="progress-empty">오늘 등록된 계획이 없습니다</div>';
+    el.innerHTML = `<div class="progress-empty">${t('no_today_plans')}</div>`;
     return;
   }
-  const done  = todayTodos.filter(t => t.completed).length;
+  const done  = todayTodos.filter(td => td.completed).length;
   const total = todayTodos.length;
   const pct   = Math.round((done / total) * 100);
   const isFull = pct === 100;
   el.innerHTML = `
     <div class="progress-title-row">
-      <span>오늘 할 일</span>
+      <span>${t('today_tasks')}</span>
       <span class="progress-pct">${pct}%</span>
     </div>
     <div class="progress-bar-track">
       <div class="progress-bar-fill${isFull ? ' full' : ''}" style="width:${pct}%"></div>
     </div>
-    <div class="progress-count-row">완료 ${done}개 / 전체 ${total}개</div>
+    <div class="progress-count-row">${t('progress_count', done, total)}</div>
   `;
 }
 
@@ -695,7 +1220,7 @@ function renderTodoList() {
     });
   }
 
-  if (todos.length === 0) { listEl.innerHTML = '<div class="todo-empty">등록된 계획이 없습니다.</div>'; return; }
+  if (todos.length === 0) { listEl.innerHTML = `<div class="todo-empty">${t('no_plans')}</div>`; return; }
 
   listEl.innerHTML = todos.map(todo => {
     const title   = escapeHtml(getTodoTitle(todo));
@@ -729,20 +1254,20 @@ function renderTodoList() {
       return `
         <div class="todo-item editing" data-id="${todo.id}">
           <div class="todo-edit-form">
-            <input type="text" class="edit-headline-input" placeholder="제목" value="${escapeHtml(todo.headline || todo.text || '')}" />
-            <textarea class="edit-text-input" placeholder="내용 (선택사항)" rows="2">${escapeHtml(todo.headline ? (todo.text || '') : '')}</textarea>
+            <input type="text" class="edit-headline-input" placeholder="${t('label_title')}" value="${escapeHtml(todo.headline || todo.text || '')}" />
+            <textarea class="edit-text-input" placeholder="${t('label_content')} ${t('optional')}" rows="2">${escapeHtml(todo.headline ? (todo.text || '') : '')}</textarea>
             <input type="date" class="edit-date-input" value="${todo.date || ''}" />
             <div class="time-input-row">
               <input type="time" class="edit-time-input modal-time-input" value="${editTimeVal}" ${editUndecided ? 'disabled' : ''} />
-              <button type="button" class="time-undecided-btn edit-time-undecided-btn${editUndecided ? ' active' : ''}">시간 미정</button>
+              <button type="button" class="time-undecided-btn edit-time-undecided-btn${editUndecided ? ' active' : ''}">${t('time_undecided')}</button>
             </div>
             <div class="priority-row edit-priority-row" data-selected="${todo.priority ?? ''}">
               ${priorityRowHtml(todo.priority ?? null)}
             </div>
             <div class="tag-selector" id="edit-tag-selector-${todo.id}" data-selected="${todo.tag_id || ''}"></div>
             <div class="edit-actions">
-              <button class="edit-save-btn" data-id="${todo.id}">저장</button>
-              <button class="edit-cancel-btn">취소</button>
+              <button class="edit-save-btn" data-id="${todo.id}">${t('save')}</button>
+              <button class="edit-cancel-btn">${t('cancel')}</button>
             </div>
           </div>
         </div>`;
@@ -762,8 +1287,8 @@ function renderTodoList() {
           ${renderDateTimeBadge(todo)}
         </div>
         <div class="todo-item-actions">
-          <button class="todo-edit-btn" data-id="${todo.id}">수정</button>
-          <button class="todo-delete-btn" data-id="${todo.id}">삭제</button>
+          <button class="todo-edit-btn" data-id="${todo.id}">${t('edit_item')}</button>
+          <button class="todo-delete-btn" data-id="${todo.id}">${t('delete_item')}</button>
         </div>
       </div>`;
   }).join('');
@@ -812,7 +1337,7 @@ function renderTodoList() {
       const tagId        = tagSel?.dataset.selected || null;
       const timeUndBtn   = item.querySelector('.edit-time-undecided-btn');
       const timeInput    = item.querySelector('.edit-time-input');
-      const time         = timeUndBtn?.classList.contains('active') ? '미정' : (timeInput?.value || null);
+      const time         = timeUndBtn?.classList.contains('active') ? t('time_undecided') : (timeInput?.value || null);
       const prioRow      = item.querySelector('.edit-priority-row');
       const prioVal      = prioRow?.dataset.selected;
       const priority     = (prioVal !== '' && prioVal !== undefined) ? parseInt(prioVal) : null;
@@ -862,7 +1387,7 @@ function priorityRowHtml(current) {
     const cfg = PRIORITY_CFG[p];
     const sel = current === p ? ' selected' : '';
     const cls = p === 0 ? 'pund' : `p${p}`;
-    return `<button type="button" class="priority-btn ${cls}${sel}" data-p="${p}">${p === 0 ? '미정' : p}</button>`;
+    return `<button type="button" class="priority-btn ${cls}${sel}" data-p="${p}">${p === 0 ? t('priority_tbd') : p}</button>`;
   }).join('');
 }
 
@@ -871,7 +1396,7 @@ function renderDateTimeBadge(todo) {
   const hasDate = !!todo.date;
   const hasTime = !!todo.time;
   if (!hasDate && !hasTime) return '';
-  const timeLabel = todo.time === '미정' ? '🕐 시간 미정' : (todo.time ? `🕐 ${todo.time}` : '');
+  const timeLabel = todo.time === '미정' ? t('time_undecided_badge') : (todo.time ? `🕐 ${todo.time}` : '');
   return `<span class="todo-item-date">${hasDate ? `📅 ${todo.date}` : ''}${hasDate && hasTime ? '&ensp;' : ''}${timeLabel}</span>`;
 }
 
@@ -885,7 +1410,7 @@ async function handleAddTodo() {
   const headline   = headlineEl.value.trim();
   if (!headline) { headlineEl.focus(); return false; }
 
-  const todoTime     = isTimeUndecided ? '미정' : (timeEl?.value || null);
+  const todoTime     = isTimeUndecided ? t('time_undecided') : (timeEl?.value || null);
   const todoPriority = selectedPriority ?? null;
   const isRepeat     = document.getElementById('repeat-toggle').checked;
   const addBtn   = document.getElementById('todo-add-btn');
@@ -895,15 +1420,15 @@ async function handleAddTodo() {
     const endStr   = document.getElementById('repeat-end-date').value;
     const interval = parseInt(document.getElementById('custom-interval').value) || 1;
 
-    if (!dateEl.value) { alert('시작 날짜를 선택해주세요.'); return false; }
-    if (!endStr)       { alert('반복 종료일을 선택해주세요.'); return false; }
-    if (new Date(endStr) < new Date(dateEl.value)) { alert('종료일이 시작일보다 이전입니다.'); return false; }
+    if (!dateEl.value) { alert(t('alert_no_start')); return false; }
+    if (!endStr)       { alert(t('alert_no_end')); return false; }
+    if (new Date(endStr) < new Date(dateEl.value)) { alert(t('alert_end_before')); return false; }
 
     const dates = generateDates(dateEl.value, selectedRepeatType, interval, endStr);
-    if (!dates.length) { alert('생성할 계획이 없습니다.'); return false; }
+    if (!dates.length) { alert(t('alert_no_items')); return false; }
 
     addBtn.disabled = true;
-    addBtn.textContent = `${dates.length}개 등록 중...`;
+    addBtn.textContent = t('adding_n', dates.length);
 
     if (isGuest) {
       const newItems = dates.map(date => ({
@@ -931,7 +1456,7 @@ async function handleAddTodo() {
     }
 
     addBtn.disabled = false;
-    addBtn.textContent = '추가하기';
+    addBtn.textContent = t('add_btn');
 
   } else {
     // ---- 단일 계획 ----
@@ -1043,7 +1568,7 @@ function renderTagFilter() {
 
   const allActive = !filterTagId;
   row.innerHTML = `
-    <button class="tag-filter-btn all-btn ${allActive ? 'active' : ''}" data-id="">전체</button>
+    <button class="tag-filter-btn all-btn ${allActive ? 'active' : ''}" data-id="">${t('tag_filter_all')}</button>
     ${cachedTags.map(t => {
       const isActive = filterTagId === t.id;
       const border   = isActive ? `border-color:${t.color};box-shadow:0 0 0 2px ${t.color}40;` : '';
@@ -1072,7 +1597,7 @@ function renderTagSelector(containerId, currentTagId, onSelect) {
 
   const noneSelected = !currentTagId;
   container.innerHTML = `
-    <button type="button" class="tag-option ${noneSelected ? 'none-selected' : ''}" data-id="">없음</button>
+    <button type="button" class="tag-option ${noneSelected ? 'none-selected' : ''}" data-id="">${t('tag_none')}</button>
     ${cachedTags.map(t => {
       const isSelected = currentTagId === t.id;
       return `<button type="button"
@@ -1115,13 +1640,13 @@ function closeTagManageModal() {
 function renderTagManageList() {
   const listEl = document.getElementById('tag-manage-list');
   if (!cachedTags.length) {
-    listEl.innerHTML = '<div class="tag-manage-empty">아직 태그가 없습니다.</div>';
+    listEl.innerHTML = `<div class="tag-manage-empty">${t('no_tags')}</div>`;
     return;
   }
-  listEl.innerHTML = cachedTags.map(t => `
+  listEl.innerHTML = cachedTags.map(tag => `
     <div class="tag-manage-item">
-      <span class="tag-pill" style="background:${t.color};color:${getTextColor(t.color)};">${escapeHtml(t.name)}</span>
-      <button class="tag-delete-btn" data-id="${t.id}">삭제</button>
+      <span class="tag-pill" style="background:${tag.color};color:${getTextColor(tag.color)};">${escapeHtml(tag.name)}</span>
+      <button class="tag-delete-btn" data-id="${tag.id}">${t('delete')}</button>
     </div>`).join('');
 
   listEl.querySelectorAll('.tag-delete-btn').forEach(btn => {
@@ -1242,13 +1767,13 @@ function updateRepeatPreview() {
   if (!startStr || !endStr) { preview.textContent = ''; return; }
 
   if (new Date(endStr) < new Date(startStr)) {
-    preview.textContent = '종료일이 시작일보다 이전입니다.';
+    preview.textContent = t('preview_end_before');
     preview.className = 'repeat-preview warn';
     return;
   }
 
   const dates = generateDates(startStr, selectedRepeatType, interval, endStr);
-  preview.textContent = `총 ${dates.length}개 계획이 등록됩니다.`;
+  preview.textContent = t('preview_n', dates.length);
   preview.className = 'repeat-preview';
 }
 
@@ -1360,7 +1885,7 @@ function exitSelectionMode() {
 function updateSelectionBar() {
   const countEl = document.getElementById('sel-count');
   const allCb   = document.getElementById('select-all-cb');
-  if (countEl) countEl.textContent = `${selectedIds.size}개 선택`;
+  if (countEl) countEl.textContent = t('n_selected', selectedIds.size);
   const visibleIds = getFilteredTodos().map(t => t.id);
   if (allCb && visibleIds.length > 0) {
     const allChecked = visibleIds.every(id => selectedIds.has(id));
@@ -1371,7 +1896,7 @@ function updateSelectionBar() {
 
 async function deleteSelected() {
   if (!selectedIds.size) return;
-  if (!confirm(`${selectedIds.size}개의 계획을 삭제할까요?`)) return;
+  if (!confirm(t('del_selected', selectedIds.size))) return;
   const ids = [...selectedIds];
   cachedTodos = cachedTodos.filter(t => !ids.includes(t.id));
   exitSelectionMode();
@@ -1386,7 +1911,7 @@ async function deleteSelected() {
 async function deleteAllVisible() {
   const visible = getFilteredTodos();
   if (!visible.length) return;
-  if (!confirm(`현재 목록의 계획 ${visible.length}개를 모두 삭제할까요?`)) return;
+  if (!confirm(t('del_all', visible.length))) return;
   const ids = visible.map(t => t.id);
   cachedTodos = cachedTodos.filter(t => !ids.includes(t.id));
   renderTodoList(); renderIncompletePanel(); renderCalendar(); renderProgressWidget();
@@ -1526,11 +2051,11 @@ function incrementContactRateLimit() {
 contactForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (checkContactRateLimit() >= 3) {
-    alert('하루 최대 3건까지만 문의할 수 있습니다. 내일 다시 시도해 주세요.');
+    alert(t('rate_limit'));
     return;
   }
   submitBtn.disabled = true;
-  submitBtn.textContent = '전송 중...';
+  submitBtn.textContent = t('submitting');
   try {
     const res = await fetch('https://formspree.io/f/xjgpqyyw', {
       method: 'POST',
@@ -1540,9 +2065,9 @@ contactForm.addEventListener('submit', async (e) => {
     if (res.ok) {
       incrementContactRateLimit();
       contactForm.style.display = 'none'; successBox.style.display = 'block'; contactForm.reset();
-    } else alert('전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
-  } catch { alert('네트워크 오류가 발생했습니다.'); }
-  finally { submitBtn.disabled = false; submitBtn.textContent = '문의 보내기'; }
+    } else alert(t('send_failed'));
+  } catch { alert(t('network_error')); }
+  finally { submitBtn.disabled = false; submitBtn.textContent = t('submit'); }
 });
 
 // ===================================================
@@ -1581,7 +2106,7 @@ function updateThemeBtn(theme) {
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
   btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-  btn.title = theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환';
+  btn.title = theme === 'dark' ? t('theme_toggle_light') : t('theme_toggle_dark');
 }
 
 document.getElementById('theme-toggle-btn').addEventListener('click', () => {
@@ -1597,6 +2122,22 @@ document.getElementById('theme-toggle-btn').addEventListener('click', () => {
 const WIDGET_LAYOUT_KEY = 'daily_widget_layout_v2';
 let isEditMode = false;
 
+function getWidgetLabels() {
+  return {
+    'widget-weather':   t('widget_weather'),
+    'widget-calendar':  t('widget_calendar'),
+    'widget-plans':     t('widget_plans'),
+    'widget-progress':  t('widget_progress'),
+    'widget-memo':      t('widget_memo'),
+    'widget-pomodoro':  t('widget_pomodoro'),
+    'widget-clock-1':   t('widget_clock') + ' 1',
+    'widget-clock-2':   t('widget_clock') + ' 2',
+    'widget-clock-3':   t('widget_clock') + ' 3',
+    'widget-clock-4':   t('widget_clock') + ' 4',
+    'widget-clock-5':   t('widget_clock') + ' 5',
+  };
+}
+// 하위 호환성을 위해 WIDGET_LABELS도 유지
 const WIDGET_LABELS = {
   'widget-weather':   '🌤 날씨',
   'widget-calendar':  '📅 달력',
@@ -1682,15 +2223,16 @@ function updateWidgetMgrDropdown() {
   const hiddenOthers = hidden.filter(w => !w.id.startsWith('widget-clock-'));
 
   const items = [];
+  const wLabels = getWidgetLabels();
   hiddenOthers.forEach(w => {
-    items.push({ label: `${WIDGET_LABELS[w.id] || w.id} 추가`, widgetId: w.id });
+    items.push({ label: `${wLabels[w.id] || w.id}${t('widget_add_suffix')}`, widgetId: w.id });
   });
   if (hiddenClocks.length > 0) {
-    items.push({ label: '🕐 시계 추가', widgetId: '__clock__' });
+    items.push({ label: t('widget_clock_add'), widgetId: '__clock__' });
   }
 
   if (!items.length) {
-    dropdown.innerHTML = '<div class="widget-mgr-empty">숨긴 위젯이 없어요</div>';
+    dropdown.innerHTML = `<div class="widget-mgr-empty">${t('widget_no_hidden')}</div>`;
     return;
   }
 
@@ -1726,7 +2268,7 @@ function setEditMode(on) {
   const wrap    = document.getElementById('widget-mgr-wrap');
   area.classList.toggle('edit-mode', on);
   editBtn.classList.toggle('active', on);
-  editBtn.textContent = on ? '✓ 편집 완료' : '✏ 편집';
+  editBtn.textContent = on ? t('widget_edit_done') : t('widget_edit');
   wrap.classList.toggle('edit-active', on);
   document.querySelector('.dash-header')?.classList.toggle('edit-active', on);
   if (!on) document.getElementById('widget-mgr-dropdown').style.display = 'none';
@@ -1755,7 +2297,7 @@ function resetWidgetLayout() {
 }
 
 document.getElementById('widget-reset-btn').addEventListener('click', () => {
-  if (!confirm('위젯 배치를 기본값으로 초기화할까요?')) return;
+  if (!confirm(t('reset_confirm'))) return;
   resetWidgetLayout();
 });
 
@@ -1910,7 +2452,7 @@ function loadMemoData() {
     if (saved?.tabs?.length) { memoData = saved; return; }
   } catch {}
   const id = 'tab-' + Date.now();
-  memoData = { tabs: [{ id, name: '메모 1', mode: 'text', text: '', canvasData: null }], activeId: id };
+  memoData = { tabs: [{ id, name: t('memo_default'), mode: 'text', text: '', canvasData: null }], activeId: id };
 }
 
 function saveMemoData() {
@@ -1940,10 +2482,10 @@ function renderMemoTabs() {
   });
   el.querySelectorAll('.memo-tab-name').forEach(span => {
     span.addEventListener('dblclick', () => {
-      const t = memoData.tabs.find(x => x.id === span.dataset.id);
-      if (!t) return;
-      const n = prompt('탭 이름 변경:', t.name);
-      if (n?.trim()) { t.name = n.trim(); saveMemoData(); renderMemoTabs(); }
+      const tab = memoData.tabs.find(x => x.id === span.dataset.id);
+      if (!tab) return;
+      const n = prompt(t('memo_rename'), tab.name);
+      if (n?.trim()) { tab.name = n.trim(); saveMemoData(); renderMemoTabs(); }
     });
   });
   el.querySelectorAll('.memo-tab-del').forEach(btn => {
@@ -1966,8 +2508,8 @@ function memoDrawToolbarHTML() {
     <div class="memo-tool-sep"></div>
     <div class="memo-sizes">${sizeBtns}</div>
     <div class="memo-tool-sep"></div>
-    <button class="memo-eraser-btn${memoTool.eraser?' active':''}" id="memo-eraser">🧹 지우개</button>
-    <button class="memo-clear-btn" id="memo-clear">🗑 전체</button>
+    <button class="memo-eraser-btn${memoTool.eraser?' active':''}" id="memo-eraser">${t('memo_eraser')}</button>
+    <button class="memo-clear-btn" id="memo-clear">${t('memo_clear')}</button>
   </div>`;
 }
 
@@ -2015,14 +2557,14 @@ function renderMemoContent() {
 
   const modeBar = `
     <div class="memo-toolbar">
-      <button class="memo-mode-btn${tab.mode==='text'    ?' active':''}" data-mode="text">✏ 텍스트</button>
-      <button class="memo-mode-btn${tab.mode==='draw'    ?' active':''}" data-mode="draw">🖌 그리기</button>
-      <button class="memo-mode-btn${tab.mode==='combined'?' active':''}" data-mode="combined">✏🖌 같이쓰기</button>
+      <button class="memo-mode-btn${tab.mode==='text'    ?' active':''}" data-mode="text">${t('memo_mode_text')}</button>
+      <button class="memo-mode-btn${tab.mode==='draw'    ?' active':''}" data-mode="draw">${t('memo_mode_draw')}</button>
+      <button class="memo-mode-btn${tab.mode==='combined'?' active':''}" data-mode="combined">${t('memo_mode_combined')}</button>
     </div>`;
 
   if (tab.mode === 'text') {
     cont.innerHTML = modeBar +
-      `<textarea class="memo-textarea" id="memo-ta" placeholder="메모를 입력하세요...">${escapeHtml(tab.text)}</textarea>`;
+      `<textarea class="memo-textarea" id="memo-ta" placeholder="${t('memo_ph')}">${escapeHtml(tab.text)}</textarea>`;
     document.getElementById('memo-ta').addEventListener('input', function() { tab.text = this.value; saveMemoData(); });
 
   } else if (tab.mode === 'draw') {
@@ -2036,13 +2578,13 @@ function renderMemoContent() {
     const drawTools = isDrawSub ? memoDrawToolbarHTML() : '';
     cont.innerHTML = modeBar +
       `<div class="memo-combined-toolbar">
-         <button class="memo-submode-btn${!isDrawSub?' active':''}" data-submode="text">✏ 텍스트 편집</button>
-         <button class="memo-submode-btn${isDrawSub?' active':''}" data-submode="draw">🖌 그리기</button>
+         <button class="memo-submode-btn${!isDrawSub?' active':''}" data-submode="text">${t('memo_sub_text')}</button>
+         <button class="memo-submode-btn${isDrawSub?' active':''}" data-submode="draw">${t('memo_sub_draw')}</button>
          ${drawTools}
        </div>
        <div class="memo-overlay-wrap" id="memo-overlay-wrap">
          <textarea class="memo-textarea memo-overlay-text" id="memo-ta"
-           placeholder="메모를 입력하세요...">${escapeHtml(tab.combinedText || '')}</textarea>
+           placeholder="${t('memo_ph')}">${escapeHtml(tab.combinedText || '')}</textarea>
          <canvas class="memo-canvas memo-overlay-canvas${isDrawSub?'':' no-pointer'}"
            id="memo-canvas"></canvas>
        </div>`;
@@ -2161,7 +2703,7 @@ function memoSwitchTab(id) {
   memoData.activeId = id; saveMemoData(); renderMemoTabs(); renderMemoContent();
 }
 function memoDeleteTab(id) {
-  if (memoData.tabs.length <= 1) { alert('마지막 탭은 삭제할 수 없어요.'); return; }
+  if (memoData.tabs.length <= 1) { alert(t('memo_last_tab')); return; }
   const idx = memoData.tabs.findIndex(t => t.id === id);
   memoData.tabs.splice(idx, 1);
   if (memoData.activeId === id) memoData.activeId = memoData.tabs[Math.max(0, idx-1)].id;
@@ -2169,7 +2711,7 @@ function memoDeleteTab(id) {
 }
 function memoAddTab() {
   const id = 'tab-' + Date.now();
-  memoData.tabs.push({ id, name: `메모 ${memoData.tabs.length + 1}`, mode: 'text', text: '', canvasData: null, combinedText: '', combinedCanvas: null });
+  memoData.tabs.push({ id, name: t('memo_tab_n', memoData.tabs.length + 1), mode: 'text', text: '', canvasData: null, combinedText: '', combinedCanvas: null });
   memoSwitchTab(id);
 }
 
@@ -2287,9 +2829,9 @@ function pomoFinish() {
 
   // 브라우저 알림 (권한 있을 때만)
   if (Notification?.permission === 'granted') {
-    const msg = pomoState.mode === 'focus' ? '🍅 집중 시간을 시작하세요!' :
-                pomoState.mode === 'break' ? '☕ 잠깐 쉬어가세요!' : '🌙 긴 휴식 시간입니다!';
-    new Notification('뽀모도로', { body: msg, icon: '/favicon.ico' });
+    const msg = pomoState.mode === 'focus' ? t('pomo_notify_focus') :
+                pomoState.mode === 'break' ? t('pomo_notify_break') : t('pomo_notify_long');
+    new Notification(t('pomo_notify_title'), { body: msg, icon: '/favicon.ico' });
   }
 }
 
@@ -2340,7 +2882,7 @@ function renderPomoTimer() {
 
   const isFocus = pomoState.mode === 'focus';
   const isLong  = pomoState.mode === 'longbreak';
-  const modeLabel = isFocus ? '🍅 집중' : isLong ? '🌙 긴 휴식' : '☕ 휴식';
+  const modeLabel = isFocus ? t('pomo_focus') : isLong ? t('pomo_longbreak') : t('pomo_break');
   const modeColor = isFocus ? '#e05252' : isLong ? '#5b8dee' : '#3dba7d';
   const trackColor = isFocus ? '#fde8e8' : isLong ? '#dde8fd' : '#d4f5e5';
 
@@ -2365,19 +2907,19 @@ function renderPomoTimer() {
     <div class="pomo-dots">${dots}</div>
     <div class="pomo-controls">
       ${pomoState.running
-        ? `<button class="pomo-btn pomo-btn-main" id="pomo-pause-btn">⏸ 일시정지</button>`
+        ? `<button class="pomo-btn pomo-btn-main" id="pomo-pause-btn">${t('pomo_pause')}</button>`
         : `<button class="pomo-btn pomo-btn-main" id="pomo-start-btn"
-            style="background:${modeColor}">▶ 시작</button>`}
-      <button class="pomo-btn pomo-btn-sub" id="pomo-skip-btn" title="다음 단계로">⏭</button>
-      <button class="pomo-btn pomo-btn-sub" id="pomo-reset-btn" title="초기화">↺</button>
+            style="background:${modeColor}">${t('pomo_start')}</button>`}
+      <button class="pomo-btn pomo-btn-sub" id="pomo-skip-btn" title="${t('pomo_skip_title')}">⏭</button>
+      <button class="pomo-btn pomo-btn-sub" id="pomo-reset-btn" title="${t('pomo_reset_title')}">↺</button>
       <button class="pomo-btn pomo-btn-sub pomo-mute-btn${pomoState.muted ? ' muted' : ''}"
-        id="pomo-mute-btn" title="${pomoState.muted ? '알람 켜기' : '알람 끄기'}">
+        id="pomo-mute-btn" title="${pomoState.muted ? t('pomo_mute_on') : t('pomo_mute_off')}">
         ${pomoState.muted ? '🔇' : '🔔'}
       </button>
     </div>
     <div class="pomo-settings">
-      <label>집중 <input class="pomo-mins-input" id="pomo-focus-input" type="number" min="1" max="60" value="${pomoState.focusMins}">분</label>
-      <label>휴식 <input class="pomo-mins-input" id="pomo-break-input" type="number" min="1" max="30" value="${pomoState.breakMins}">분</label>
+      <label>${t('pomo_focus_lbl')} <input class="pomo-mins-input" id="pomo-focus-input" type="number" min="1" max="60" value="${pomoState.focusMins}">${t('pomo_min')}</label>
+      <label>${t('pomo_break_lbl')} <input class="pomo-mins-input" id="pomo-break-input" type="number" min="1" max="30" value="${pomoState.breakMins}">${t('pomo_min')}</label>
     </div>
   `;
 
@@ -2412,6 +2954,26 @@ renderPomoTimer();
 // ===================================================
 const CLOCK_SETTINGS_KEY = 'clock_settings_v1';
 
+function getClockTimezones() {
+  return [
+    { label: t('tz_korea'),      tz: 'Asia/Seoul' },
+    { label: t('tz_japan'),      tz: 'Asia/Tokyo' },
+    { label: t('tz_china'),      tz: 'Asia/Shanghai' },
+    { label: t('tz_singapore'),  tz: 'Asia/Singapore' },
+    { label: t('tz_india'),      tz: 'Asia/Kolkata' },
+    { label: t('tz_dubai'),      tz: 'Asia/Dubai' },
+    { label: t('tz_russia'),     tz: 'Europe/Moscow' },
+    { label: t('tz_uk'),         tz: 'Europe/London' },
+    { label: t('tz_germany'),    tz: 'Europe/Berlin' },
+    { label: t('tz_france'),     tz: 'Europe/Paris' },
+    { label: t('tz_us_east'),    tz: 'America/New_York' },
+    { label: t('tz_us_west'),    tz: 'America/Los_Angeles' },
+    { label: t('tz_brazil'),     tz: 'America/Sao_Paulo' },
+    { label: t('tz_australia'),  tz: 'Australia/Sydney' },
+    { label: t('tz_newzealand'), tz: 'Pacific/Auckland' },
+  ];
+}
+// 하위 호환성
 const CLOCK_TIMEZONES = [
   { label: '🇰🇷 한국',              tz: 'Asia/Seoul' },
   { label: '🇯🇵 일본',              tz: 'Asia/Tokyo' },
@@ -2461,8 +3023,8 @@ function initClockWidget(num) {
 
   const clockId = `widget-clock-${num}`;
   const tz = getClockTz(clockId);
-  const opts = CLOCK_TIMEZONES.map(t =>
-    `<option value="${t.tz}"${t.tz === tz ? ' selected' : ''}>${t.label}</option>`
+  const opts = getClockTimezones().map(tzItem =>
+    `<option value="${tzItem.tz}"${tzItem.tz === tz ? ' selected' : ''}>${tzItem.label}</option>`
   ).join('');
 
   el.innerHTML = `
@@ -2483,14 +3045,16 @@ function tickClock(num) {
   const dateEl = document.getElementById(`clock-date-${num}`);
   if (!timeEl || !dateEl) return;
 
-  const tz  = getClockTz(`widget-clock-${num}`);
-  const now = new Date();
+  const tz   = getClockTz(`widget-clock-${num}`);
+  const now  = new Date();
+  const locale = currentLang === 'ko' ? 'ko-KR' : 'en-US';
   try {
-    const t = now.toLocaleTimeString('ko-KR', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const d = now.toLocaleDateString('ko-KR', { timeZone: tz, year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-    const [hh, mm, ss] = t.split(':');
+    const timeStr = now.toLocaleTimeString(locale, { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString(locale, { timeZone: tz, year: 'numeric', month: 'short', day: 'numeric', weekday: 'short' });
+    const parts = timeStr.split(':');
+    const [hh, mm, ss] = parts;
     timeEl.innerHTML = `${hh}<span class="clock-colon">:</span>${mm}<span class="clock-colon">:</span>${ss}`;
-    dateEl.textContent = d;
+    dateEl.textContent = dateStr;
   } catch {}
 }
 
@@ -2503,3 +3067,13 @@ function tickAllClocks() {
 
 tickAllClocks();
 setInterval(tickAllClocks, 1000);
+
+// ===================================================
+//  언어 토글
+// ===================================================
+document.getElementById('lang-toggle-btn')?.addEventListener('click', () => {
+  setLang(currentLang === 'ko' ? 'en' : 'ko');
+});
+
+// 초기 번역 적용 (한국어가 아닐 때)
+applyTranslations();
